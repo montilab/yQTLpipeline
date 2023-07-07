@@ -1,5 +1,13 @@
 # *yQTL Pipeline* Documentations 
 
+*A Nextflow- and R-based pipeline to organize the multiple steps of QTL discovery analysis. Built under Nextflow DSL2.*  
+
+[![Built With](https://img.shields.io/badge/Built%20With-Nextflow%20DSL2-blue.svg)](https://www.nextflow.io/) 
+![R](https://img.shields.io/badge/Framework-R%204.1.2-blue.svg) 
+![Compatibility](https://img.shields.io/badge/Compatibility-Linux%20%2F%20OSX-orange.svg) 
+![Dependencies](https://img.shields.io/badge/dependencies-up%20to%20date-brightgreen.svg) 
+[![GitHub Issues](https://img.shields.io/github/issues/montilab/yQTL-Pipeline.svg)](https://github.com/montilab/yQTL-Pipeline/issues)
+
 ## 1\. Setup 
 
 ### 1\.1 Install R packages
@@ -57,10 +65,10 @@ Specify input file paths and parameters in `Config.config`. See the following se
 
 When running on local:  
 ``` bash
-$ module load R
-$ ./nextflow -c Config.config run Prepare.nf
-$ ./nextflow -c Config.config run Analysis.nf
-$ ./nextflow -c Config.config run Report.nf
+$ module load R/4.1.2 
+$ ./nextflow -c Config.config run Prepare.nf 
+$ ./nextflow -c Config.config run Analysis.nf 
+$ ./nextflow -c Config.config run Report.nf 
 ```
 
 When running on a shared computer cluster for high-performance:  
@@ -71,11 +79,11 @@ When running on a shared computer cluster for high-performance:
 Alternatively, when Nextflow module is already installed, use the following:  
 
 ``` bash
-$ module load R
-$ module load nextflow
-$ nextflow -c Config.config run Prepare.nf
-$ nextflow -c Config.config run Analysis.nf
-$ nextflow -c Config.config run Report.nf
+$ module load R/4.1.2 
+$ module load nextflow 
+$ nextflow -c Config.config run Prepare.nf 
+$ nextflow -c Config.config run Analysis.nf 
+$ nextflow -c Config.config run Report.nf 
 ```
 
 
