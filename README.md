@@ -181,5 +181,32 @@ All logs for each of the analyses steps will be saved in each of the folders.
 *proceed with caution*  Nextflow would save all the intermediate results in the work/ directory. When the pipeline successfully finishes, it's highly recommended to discard the work/ directory.  
 *proceed with caution*  Since QTL results can be very large, when the user is sure about the results of the association of all SNPs and all phenotypes are saved in < 5_Results_Summary >, results in < 2_SNP_info >, < 3_individual_results > and < 4_individual_results_SNPinfo > can be discarded, since < 5_Results_Summary > is simply the merged version of all of them. It's recommended to discard < 4_individual_results_SNPinfo > first since it is simply subsets of < 5_Results_Summary >.  
 
+## 6. Run Examples  
+Two examples are provided in the folder < example/ >. Example input data are provided in < data/ >.
+
+### Example 1  
+Start from VCF file input, calculate PCs, and use MatrixeQTL to obtain QTL results.  
+You may also change "params.pipeline_engine" to "genesis" in the config to use GENESIS and the same example inputs in this example.  
+
+1. In your bash, go to the directory < example/ > .  
+`cd Directory/Where/You/Installed/the/Pipeline/example`  
+2. Launch R and run `Rscript GenerateExample_M.R`.  
+This will write out the files `ExampleConfig_M.config` and `Example_M.sh`, as well as update the < data/ > directory to setup the input file paths.  
+Note: this must be run under the directory example/, since R needs to use the working directory to set up the input file paths.  
+3. Run `bash Example_M.sh`.  
+4. Example results will be generated in folder < ExampleResults_M >.  
+
+### Example 2  
+Start from GDS file input, using pre-defined PCs and GRM, and use GENESIS to obtain QTL results.  
+You may also change "params.pipeline_engine" to "matrixeqtl" in the config to use MatrixeQTL and the same example inputs in this example.  
+
+1. In your bash, go to the directory < example/ > .  
+`cd Directory/Where/You/Installed/the/Pipeline/example`  
+2. Launch R and run `Rscript GenerateExample_G.R`.  
+This will write out the files `ExampleConfig_G.config` and `Example_G.sh`, as well as update the < data/ > directory to setup the input file paths.  
+Note: this must be run under the directory example/, since R needs to use the working directory to set up the input file paths.  
+3. Run `bash Example_G.sh`.  
+4. Example results will be generated in folder < ExampleResults_G >.  
+
 
 -end-
