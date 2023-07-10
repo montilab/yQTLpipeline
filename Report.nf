@@ -3,11 +3,11 @@ nextflow.enable.dsl=2
 // nextflow.enable.configprocessNamesValidation = false
 
 log.info """\
--
+
 QTL Pipeline - Report
 ================================
-outdir    : $params.outdir
--
+Output Directory   : $params.outdir
+================================
 """
 
 params.output_result_csv = false
@@ -82,7 +82,7 @@ process G_QTL_results_wrap {
 workflow { 
 
 if (params.pipeline_engine == "matrixeqtl" | params.pipeline_engine == "m") {
-    phenodat_chunk = channel.fromPath("${params.outdir}/2_phenotype_data_chunk/phenodat_*.rds").flatten()
+    phenodat_chunk = channel.fromPath("${params.outdir}/1_phenotype_data_chunk/phenodat_*.rds").flatten()
     QTL_assoc_winfo_dir = "${params.outdir}/4_individual_results_SNPinfo/"
     M_QTL_results_wrap(phenodat_chunk, QTL_assoc_winfo_dir)
 }

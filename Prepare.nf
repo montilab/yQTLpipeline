@@ -1,6 +1,6 @@
 #!/usr/bin/env nextflow
 nextflow.enable.dsl=2
-nextflow.enable.configprocessNamesValidation = false
+// nextflow.enable.configprocessNamesValidation = false
 
 // ##### Not used process to aviod warnings from sge.config ####################
 process M_get_shared_sampleid {script:""" """} 
