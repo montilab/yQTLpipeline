@@ -8,6 +8,16 @@
 ![Dependencies](https://img.shields.io/badge/dependencies-up%20to%20date-brightgreen.svg) 
 [![GitHub Issues](https://img.shields.io/github/issues/montilab/yQTL-Pipeline.svg)](https://github.com/montilab/yQTL-Pipeline/issues)
 
+## Table of Content
+- [1.Setup](https://github.com/montilab/yQTL-Pipeline#1-setup)  
+- [2.Run the yQTL-Pipeline](https://github.com/montilab/yQTL-Pipeline#2-run-the-yqtl-pipeline)  
+	- [Run Examples](https://github.com/montilab/yQTL-Pipeline#run-examples)  
+- [3.Input Files and Parameters](https://github.com/montilab/yQTL-Pipeline#3-input-files-and-parameters)  
+- [4.Input File Examples](https://github.com/montilab/yQTL-Pipeline#4-input-file-examples)  
+- [5.Output Descriptions](https://github.com/montilab/yQTL-Pipeline#5-output-descriptions)  
+- [6.Workflow Process Details](https://github.com/montilab/yQTL-Pipeline#6-workflow-process-details)  
+
+
 ## 1\. Setup 
 
 ### 1\.1 Install R packages
@@ -15,41 +25,22 @@ Install the required R packages:
 ``` R
 install.packages("dplyr")
 install.packages("tidyverse")
+install.packages("data.table")
+install.packages("qqman")
+install.packages("MatrixEQTL")
 BiocManager::install("Biobase")
-install.packages("data.table") 
 BiocManager::install("SNPRelate")
 BiocManager::install("SeqArray")
 BiocManager::install("SeqVarTools")
-install.packages("MatrixEQTL")
 BiocManager::install("GENESIS")
-install.packages("qqman")
 ```
 
 ### 1\.2 Decide which Nextflow (nf) scripts to use 
 The whole pipeline is divided into three nf scripts: `Prepare.nf`, `Analysis.nf` and `Report.nf`.  
-1. When the genotype data is in GDS format and genetic PCs (as well as genetic relationship matrix (GRM), when individual relatedness is present) is available, only `Analysis.nf` and `Report.nf` are needed.  
-2. When the genotype data is in VCF format, and/or genetic PCs and GRM are needed, `Prepare.nf` must be run before launching `Analysis.nf` and `Report.nf`.  
+1. When the genotype data is in GDS format and genetic PCs (and genetic relationship matrix (GRM), when individual relatedness is present) is available, only `Analysis.nf` and `Report.nf` are needed.  
+2. When the genotype data is in VCF format, and/or genetic PCs and GRM are needed, must be run `Prepare.nf` before launching `Analysis.nf` and `Report.nf`.  
 
-The processes included in each one of the nf script:  
-**Prepare.nf**  
-1. `vcf_to_gds`  Convert VCF files to GDS format.  
-2. `write_gds_list`  Write the resulting GDS file paths into a CSV file for Analysis.nf to use.  
-3. `merge_gds`  Merge the GDS files for the following process `PCA` or `PCA_GRM`.  
-4. `PCA` or `PCA_GRM`  Perform genetic PCA analysis using PC-AiR and obtain GRM using PC-Relate.  
-
-**Analysis.nf**  
-1. `get_shared_sampleid`  Obtain the shared sample ids from the input genotype files and phenotype file, and the following optional input files when provided: covariate file, PC RDS file, and user defined sample id TXT file. Those are the sample ids to be used in the analysis.  
-2. `split_pheno`  Split phenotype data into chunks or single phenotype in order to analyze them in parallel.  
-3. `prepare_cvrt`  Read in covariates file and process categorical covariates.  
-4. `SNP_info`  Obtain SNP information from the GDS file.  
-	When running GENESIS version, this includes variant.id, REF (reference allele), ALT.ca (alternative allele, coded allele), and snpID (annotation in genotype file).  
-	When running MatrixeQTL version, besides the entries mentioned, chr (chromosome), pos (position), freq.ca (frequency of coded allele), freq.minor (frequency of minor allele), miss (missing rate), n.obs (number of observance), MAC (minor allele count) will also be included. GENESIS will return these information along with the association results.  
-5. `QTL_analysis`  Association test of the SNPs from each of the genotype data file with each of the phenotype.  
-6. `merge_info_QTL`  Combine the QTL results obtain from `QTL_analysis` with corresponding SNP information obtained from `SNP_info`.  
-7. `QTL_count_wrap`  Count the number of QTLs returned by `QTL_analysis`.  
-
-**Report.nf**  
-1. `QTL_results_wrap`  For each of the phenotype, merge the QTL results from `QTL_count_wrap` in `Analysis.nf`, and draw phenotype histogram plot, QQ plot and Manhattan plot.  
+See below in [6.Workflow Process Details](https://github.com/montilab/yQTL-Pipeline#6-workflow-process-details) for detailed descriptions of the processes included in each of the nf scripts.  
 
 ### 1\.3 Download the Nextflow executable
 Nextflow requires a POSIX compatible system (Linux, OS X, etc.) and Java 8 (recommended Java 11 or later, up to 18) to be installed. Use the following command to download the executable. Once downloaded, optionally, you may make the nextflow file accessible by your $PATH variable so you do not need to specify the full path to nextflow each time.  
@@ -58,10 +49,10 @@ Nextflow requires a POSIX compatible system (Linux, OS X, etc.) and Java 8 (reco
 $ curl -s https://get.nextflow.io | bash
 ```
 
-Sometimes Nextflow may be already installed as a module on your machine. Use `module avail nextflow` to check. If so, you do not need to download the Nextflow executable. 
+Sometimes Nextflow may be already installed as a module on your machine. Use `module avail nextflow` to check. If so, you do not need to download the Nextflow executable.  
 
 ## 2\. Run the *yQTL Pipeline*  
-Specify input file paths and parameters in `Config.config`. See the following section for description for each input parameter.  
+Specify input file paths and parameters in `Config.config`. See the following [3.Input Files and Parameters](https://github.com/montilab/yQTL-Pipeline#3-input-files-and-parameters) for details.  
 
 When running on local:  
 ``` bash
@@ -71,7 +62,7 @@ $ ./nextflow -c Config.config run Analysis.nf
 $ ./nextflow -c Config.config run Report.nf 
 ```
 
-When running on a shared computer cluster for high-performance:  
+When running on a shared computer cluster:  
 1. Set up the bash job parameters in `configs/sge.config`.  
 2. Modify the 1st line of `Config.config` to use sge.config: `includeConfig 'configs/sge.config'`.  
 3. Submit the code above as a bash job.  
@@ -86,50 +77,74 @@ $ nextflow -c Config.config run Analysis.nf
 $ nextflow -c Config.config run Report.nf 
 ```
 
+### Run Examples  
+Two examples are provided in the folder < example/ >. Example input data are provided in < data/ >.
+
+#### Example 1  
+Start from VCF file input, calculate PCs, and use MatrixeQTL to obtain QTL results.  
+You may also change "params.pipeline_engine" to "genesis" in the config to use GENESIS and the same example inputs in this example.  
+
+1. In your bash, go to the directory < example/ > .  
+`cd Directory/Where/You/Installed/the/Pipeline/example`  
+2. Launch R and run `Rscript GenerateExample_M.R`.  
+This will write out the files `ExampleConfig_M.config` and `Example_M.sh`, as well as update the < data/ > directory to setup the input file paths.  
+3. Run `bash Example_M.sh`.  
+4. Example results will be generated in folder < ExampleResults_M >.  
+
+#### Example 2  
+Start from GDS file input, using pre-defined PCs and GRM, and use GENESIS to obtain QTL results.  
+You may also change "params.pipeline_engine" to "matrixeqtl" in the config to use MatrixeQTL and the same example inputs in this example.  
+
+1. In your bash, go to the directory < example/ > .  
+`cd Directory/Where/You/Installed/the/Pipeline/example`  
+2. Launch R and run `Rscript GenerateExample_G.R`.  
+This will write out the files `ExampleConfig_G.config` and `Example_G.sh`, as well as update the < data/ > directory to setup the input file paths.  
+3. Run `bash Example_G.sh`.  
+4. Example results will be generated in folder < ExampleResults_G >.  
+
 
 ## 3\. Input Files and Parameters 
 
 ### 3\.1 Mandatory inputs
-- `params.outdir`  Directory path to save the results.  
-- `params.pipeline_engine`  When individual relatedness is present and a genetic relationship matrix (GRM) is needed, use "genesis" or "g" to run GENESIS. Linear mixed-effect models will be used. When individual relatedness is not present and all samples are independent, use either "matrixeqtl" or "m" to run MatrixeQTL. Linear models will be used. Once this parameter is setup, all processes will start with either "G_" or "M_" indicating which engine has been selected.  
+- `params.outdir`  Directory to save the results.  
+- `params.pipeline_engine`  When individual relatedness is present and a genetic relationship matrix (GRM) is needed, use "genesis" or "g" to run GENESIS. Linear mixed-effect models will be used. When individual relatedness is not present and all samples are independent, use "matrixeqtl" or "m" to run MatrixeQTL. Linear models will be used. Once this parameter is setup, all processes will start with either "G_" or "M_" indicating which engine has been selected.  
 - `params.genodat_format`  Either "vcf" or "gds".  
-- `params.vcf_list`  When `params.genodat_format` is "vcf", input the path to the CSV file that points to the location of the VCF files. The CSV file contains two columns without header. The first column is a user-defined name for each of the genotype file input, for example, "chr1chunk1" or "vcf1". The second column is the file path to the VCF file.  
-- `params.gds_list`  When `params.genodat_format` is "gds", input the path to the CSV file that points to the location of the GDS files. The setup of the CSV file is the same as described above in `params.vcf_list`. When `params.genodat_format` is "vcf", VCF files will be converted to GDS by the pipeline using `Prepare.nf`. In this case, input "${params.outdir}/1_data/gds_list.csv" here.  
-- `params.gds_list` and `params.gds_list` 
-- `params.genotype_or_dosage`  Use "genotype" or "GT" to use the "GT" entry in the GDS or VCF files when doing association analysis. Alternatively, use "dosage" or "DS" to use the "DS" entry.  
-- `params.phenotype_file`  Phenotype data file path. It should be a data frame in either TXT (tab seperated), CSV (comma seperated) or RDS format, with rows to be samples and columns to be phenotypes to discover QTL from, such as gene expression. It should contain an additional column "sample.id" matches the sample id in the genotype data. Optionally, it can also contain the covariates to be used.  
-- `params.pheno_name` A TXT file that each row is a phenotype name to analyze. Or, input character string "all" in this parameter to treat all columns except "sample.id" in `params.phenotype_file` as phenotypes to be analyzed.  
+- `params.vcf_list` and `params.gds_list`  The path to the CSV file that points to the location of the VCF or GDS files, which contains two columns without header. The first column is the user-defined names for each of the genotype files, and the second column is the file paths. When the inputs are VCF files, must also setup `params.gds_list = "${params.outdir}/1_data/gds_list.csv"`.  
+- `params.genotype_or_dosage`  Use "genotype" or "GT" to use the "GT" entry in the VCF or GDS files. Alternatively, use "dosage" or "DS" to use the "DS" entry.  
+- `params.phenotype_file`  Phenotype data file path. Phenotype file is a data frame in either TXT (tab seperated), CSV (comma seperated) or RDS format, with rows to be samples and columns to be the phenotypes to discover QTL from. A column "sample.id" is required to match the samples with the genotype data. Optionally, the phenotype file can also contain the covariates to be used.  
+- `params.pheno_name` A TXT file that each row is a phenotype name to be analyzed. Or, input string "all" to analyze all columns except "sample.id" in the phenotype file.  
 
 ### 3\.2 Optional inputs
-Please do *not* leave any of these optional parameters empty. Input "NA" when they are not applicable or not needed.  
-- `params.covariates_file`  File path including the covariates. It should be a data frame in either TXT (tab seperated), CSV (comma seperated) or RDS format, with rows to be samples and columns to be covariates to use, such as "age", "gender" and "PC1". It should contain an additional column "sample.id" matches the sample id in the genotype data. Alternatively, this entry can be "${params.phenotype_file}" if the covariates are included in the phenotype data file.  
-- `params.covariates`  A string input to specify covariates to be included. Multiple inputs are separate by comma (,) without space. Remember to also include the PCs to be used, regardless of they are provided in the `covariates_file` or they will be calculated by the pipeline. An input example would be "age,gender,facility,PC1,PC2".  
-params.covariates_factor = A string input to specify covariates that are categorical variables. Multiple inputs are separate by comma (,) without space. An input example would be "gender,facility".  
-- `params.PC_rds`  A data frame in RDS format that rows are samples and columns are PC names. It should contain an additional column "sample.id" to match with the sample ids in the genotype data. Alternatively, the PCs can be provided in the covariates file and this parameter can be then set to "NA". If the PCs will be provided by the pipeline using `Prepare.nf`, input "${params.outdir}/1_data/PCs.rds" here.   
-- `params.GRM_rds`  The genetic relationship matrix (GRM) in RDS format. The row and column names must match the names in genotype data. If the GRM will be provided by the pipeline using `Prepare.nf`, input "${params.outdir}/1_data/GRM.rds" here.  
-- `params.snpset_assoc_txtfile`  A TXT file that each row is the ID of a SNP to be included in the analysis. The SNP IDs match the "annotation/id" entry in the genotype file. Alternatively, input "NA" here to include all SNPs available.  
-- `params.userdef_sampleid_txtfile`  A TXT file for user defined subset of sample ids to use. Each row is a sample id. Alternatively, input "NA" here to include all the samples that are available.  
+Please do *not* leave any of these optional parameters empty. Input "NA" when they are not applicable or not required.  
+- `params.covariates_file`  Covariates file, following the same format as the phenotype file. Alternatively, this entry can be "${params.phenotype_file}" if the covariates are included in the phenotype data file.  
+- `params.covariates`  A string to specify the covariates to be included, separate by comma (,) without space. PCs to be used must be specified, regardless of whether they are already provided or they will be calculated by the pipeline. An example: "age,gender,facility,PC1,PC2".  
+- `params.covariates_factor`  A string to specify which covariates are categorical variables. An example: "gender,facility".  
+- `params.PC_rds`  A data frame in RDS format which rows are samples and columns are PCs. It requires a column "sample.id" which matches the sample ids in the genotype data. Alternatively, the PCs can be provided in the covariates file. If the PCs will be estimated by the pipeline, setup `params.PC_rds = "${params.outdir}/1_data/PCs.rds"`.  
+- `params.GRM_rds`  The genetic relationship matrix (GRM) in RDS format, which row and column names are the sample ids in the genotype data. If the GRM will be estimated by the pipeline, setup `params.GRM_rds = "${params.outdir}/1_data/GRM.rds"`.  
+- `params.snpset_assoc_txtfile`  A TXT file that each row is a SNP to be analyzed. Those SNP IDs match the "annotation/id" entry in the genotype file. Alternatively, input "NA" to include all SNPs available.  
+- `params.userdef_sampleid_txtfile`  A TXT file that each row is a sample id to be included in the analysis. Alternatively, input "NA" to include all the available samples.  
 
 ### 3\.3 Parameters to control analysis workflow
-- `params.max_forks_parallel`  Nextflow parameter, numeric value. Specify how many processes will be running in parallel in QTL discovery step. QTL analysis may have high demend on memory and computational power, so please set this up accordingly.  
-- `params.max_pheno_parallel`  Numeric value. Controls the maximum number of phenotypes to include in each of the QTL discovery process when using `MatrixeQTL` engine. `MatrixeQTL` is designed to be able to handle the association test of multiple phenotypes simultaneously, thus reduces computational time but also increases memory usage. This parameter sopecifies how many phenotypes will be input into MatrixeQTL engine at once.  
-- `params.pval_cutoff`  Only QTL results below this will be saved and reported.  
-- `params.output_result_csv`  Boolean, `true` or `false` (lower case, *with* quote). QTL results may be large and the pipeline saves all results in RDS format to reduce space. Set this parameter to be `true` to output the QTL results as CSV format besides RDS.  
+- `params.max_forks_parallel`  Numeric value. Controls how many processes will be running in parallel in the QTL discovery step.   
+- `params.max_pheno_parallel`  Numeric value. Controls the maximum number of phenotypes to be included in each of the QTL discovery process when using `MatrixeQTL` engine. `MatrixeQTL` is designed to handle the association test of multiple phenotypes simultaneously. Increase this parameter will result in less computational time but more memory usage.  
+- `params.pval_cutoff`  Numeric value. Only QTL results below this p-value threshold will be saved and reported.  
+- `params.output_result_csv`  Boolean, "true" or "false" (lower case *with* quote). By default, QTL results are saved in RDS format to save space. Set this parameter to be "true" to write out the QTL results as CSV format besides RDS.  
 
 **PCA Parameters**  
-- `params.start_PC`  Boolean, `true` or `false` (lower case, *without* quote). Set it to be `true` to ask the pipeline to estimate genetic PCs and GRM.  
-- `params.snpset_PCA_txtfile`  When `params.start_PC = true`, the user can specify a TXT file which contains the SNP IDs they want to include to perform the PCA analysis. The SNP IDs should match the variant ID entry in the genotype file.  
-- `params.pcair_kinthresh`  Numeric. The threshold value on a `kinobj`, which is the matrix of pairwise kinship coefficients, used for declaring each pair of individuals as related or unrelated. The most commonly used value is 11, declaring the threshold to be 2^(-11/2) ~ 0.022, corresponding to 4th degree relatives. See documentation for [PC-Air](https://rdrr.io/bioc/GENESIS/man/pcair.html) for more details.  
+- `params.start_PC`  Boolean, `true` or `false` (lower case, *without* quote). Set it to be `true` to estimate genetic PCs and GRM using the *yQTL Pipeline*.  
+When `params.start_PC = true`, setup the following:  
+- `params.snpset_PCA_txtfile`  Optionally, specify a TXT file which contains the SNP IDs to be included to obtain the genetic PCs. The SNP IDs match the variant ID entry in the genotype file. Alternatively, input "NA" to prune the SNPs using LD.  
+- `params.pcair_kinthresh`  Numeric value. The threshold value on a `kinobj`, which is the matrix of pairwise kinship coefficients, used for declaring each pair of individuals as related or unrelated. The most commonly used value is 11, declaring the threshold to be 2^(-11/2) ~ 0.022, corresponding to 4th degree relatives. See documentation for [PC-Air](https://rdrr.io/bioc/GENESIS/man/pcair.html) for more details.  
 - `params.pcair_divthresh`  Numeric. Threshold value on a `divobj`, which the matrix of pairwise ancestry divergence measures, used for deciding if each pair of individuals is ancestrally divergent. The most commonly used value is 11, declaring the threshold to be -2^(-11/2) ~ -0.022. See documentation for [PC-Air](https://rdrr.io/bioc/GENESIS/man/pcair.html) for more details.  
 
 **Plotting Parameters**  
-Those parameters only control the phenotype expression histograms, QQ plots, and Manhattan plots and will *not* filter the QTL result outputs in the RDS.  
-- `params.plot_mac`  Numeric. The minimum minor allele count (MAC) for a SNP to be considered in the QQ plot and Manhattan plot to avoid artefects caused by too little observation. When analyzing rare SNPs, this is recommended to be 3 or 5. For common SNPs, this can be much higher, such as 20.  
-- `params.plot_resolution`  Numeric. The resolution dpi to save the plots. Commonly used values including 72, 100, and 120.  
-- `params.plot_size`  Numeric. Control the size of the plots (pixels). Commonly used values including 400 and 600.  
+These parameters only control the plots and will not filter the QTL results in RDS or CSV.  
+- `params.plot_mac`  Numeric value. The minimum minor allele count (MAC) for a SNP to be included in the QQ plot and Manhattan plot to avoid artefects caused by too little observation. Commonly used values for rare SNPs is 3 or 5, while 20 for common SNPs.  
+- `params.plot_resolution`  Numeric value. The resolution dpi to save the plots. Commonly used values including 72, 100, and 120.  
+- `params.plot_size`  Numeric value. Control the size of the plots in pixels. Commonly used values including 400 and 600.  
 
 
-## 4\. Input Examples
+## 4\. Input File Examples 
 *Note: All TXT and CSV files must have a complete final line, i.e., an empty line at the end of the file when opened in a text editor. Otherwise, the computer can not process the text file.*
 
 CSV file to specify genotype file paths (without header):  
@@ -164,49 +179,46 @@ GRM:
 The results will be saved in the directory spcified in `params.outdir`, with the following sub directories.  
 
 ### 5\.1 Preparations and intermediate results  
-- < 1_data >. Including covariates used, sample ids that are shared between all inputs and thus analyzed. If the input genotype data was in VCF format, the converted GDS files will also be saved here.  
-- < 1_phenotype_data >. Including the phenotype data after split the original input into multiple chunks (when `params.pipeline_engine = "matrixeqtl"`) or single phenotype (when `params.pipeline_engine = "genesis"`).  
+- < 1_data >. Including covariates and sample ids used. If the input genotype data was in VCF format, the converted GDS files will also be saved here.  
+- < 1_phenotype_data >. Including the phenotype data after splitting the original input into multiple chunks (when `params.pipeline_engine = "matrixeqtl"`) or single phenotype (when `params.pipeline_engine = "genesis"`).  
 - < 2_SNP_info >. Information of each SNP obtained from GDS file.  
 - < 3_individual_results >. QTL association results of each genotype data with each phenotype chunk (when `params.pipeline_engine = "matrixeqtl"`) or each phenotype (when `params.pipeline_engine = "genesis"`), without SNP information.  
 - < 4_individual_results_SNPinfo >. Combined < 3_individual_results > with the corresponding SNP information in < 2_SNP_info >.  
 
-### 5\.2 Summary results and reports  
-- < 5_Results_Summary >. Contains the QTL results of each one of the phenotype in RDS format, the count table of the number of QTL identified, as well as the phenotype expression histogram, QQ plot and Manhattan plot of each phenotype.  
-Usually, this is the folder the user would take a look at. If the QTL results are too large to be merged into a single file, you can obtain them and merge them in < 4_individual_results_SNPinfo >.  
+### 5\.2 Results and reports  
+- **< 5_Results_Summary >**. Contains the QTL results of each one of the phenotype in RDS format, the count table of the number of QTL identified, as well as the phenotype expression histogram, QQ plot and Manhattan plot of each phenotype.  
+ If the QTL results are too large to be merged into a single file, you can obtain them and merge them in < 4_individual_results_SNPinfo >.  
 
 ### 5\.3 Logs  
-All logs for each of the analyses steps will be saved in each of the folders.  
+All logs for each of the analyses steps will be saved in each of the subfolders.  
 
-### 5\.4 Cleaning afterwards to save space  
-*proceed with caution*  Nextflow would save all the intermediate results in the work/ directory. When the pipeline successfully finishes, it's highly recommended to discard the work/ directory.  
-*proceed with caution*  Since QTL results can be very large, when the user is sure about the results of the association of all SNPs and all phenotypes are saved in < 5_Results_Summary >, results in < 2_SNP_info >, < 3_individual_results > and < 4_individual_results_SNPinfo > can be discarded, since < 5_Results_Summary > is simply the merged version of all of them. It's recommended to discard < 4_individual_results_SNPinfo > first since it is simply subsets of < 5_Results_Summary >.  
+### 5\.4 Cleaning to save space  
+*proceed with caution*: Nextflow would save all the intermediate results in the work/ directory. When the pipeline successfully finishes, it's recommended to discard the `work/` directory.  
+*proceed with caution*: QTL results can be very large. When the user is sure about the results of the association of all SNPs and all phenotypes are saved in < 5_Results_Summary >, results in < 2_SNP_info >, < 3_individual_results > and < 4_individual_results_SNPinfo > can be discarded, since < 5_Results_Summary > is the merged version of them.  
 
-## 6. Run Examples  
-Two examples are provided in the folder < example/ >. Example input data are provided in < data/ >.
 
-### Example 1  
-Start from VCF file input, calculate PCs, and use MatrixeQTL to obtain QTL results.  
-You may also change "params.pipeline_engine" to "genesis" in the config to use GENESIS and the same example inputs in this example.  
+## 6. Workflow Process Details
+The processes included in each one of the nf script:  
 
-1. In your bash, go to the directory < example/ > .  
-`cd Directory/Where/You/Installed/the/Pipeline/example`  
-2. Launch R and run `Rscript GenerateExample_M.R`.  
-This will write out the files `ExampleConfig_M.config` and `Example_M.sh`, as well as update the < data/ > directory to setup the input file paths.  
-Note: this must be run under the directory example/, since R needs to use the working directory to set up the input file paths.  
-3. Run `bash Example_M.sh`.  
-4. Example results will be generated in folder < ExampleResults_M >.  
+**Prepare.nf**  
+1. `vcf_to_gds`  Convert VCF files to GDS format.  
+2. `write_gds_list`  Write the resulting GDS file paths into a CSV file for Analysis.nf to use.  
+3. `merge_gds`  Merge the GDS files for the following process `PCA` or `PCA_GRM`.  
+4. `PCA` or `PCA_GRM`  Perform genetic PCA analysis using PC-AiR and obtain GRM using PC-Relate.  
 
-### Example 2  
-Start from GDS file input, using pre-defined PCs and GRM, and use GENESIS to obtain QTL results.  
-You may also change "params.pipeline_engine" to "matrixeqtl" in the config to use MatrixeQTL and the same example inputs in this example.  
+**Analysis.nf**  
+1. `get_shared_sampleid`  Obtain the shared sample ids from the input genotype files and phenotype file, and the following optional input files when provided: covariate file, PC RDS file, and user defined sample id TXT file. Those are the sample ids to be used in the analysis.  
+2. `split_pheno`  Split phenotype data into chunks or single phenotype in order to analyze them in parallel.  
+3. `prepare_cvrt`  Read in covariates file and process categorical covariates.  
+4. `SNP_info`  Obtain SNP information from the GDS file.  
+	When running GENESIS version, this includes variant.id, REF (reference allele), ALT.ca (alternative allele, coded allele), and snpID (annotation in genotype file).  
+	When running MatrixeQTL version, besides the entries mentioned, chr (chromosome), pos (position), freq.ca (frequency of coded allele), freq.minor (frequency of minor allele), miss (missing rate), n.obs (number of observance), MAC (minor allele count) will also be included. GENESIS will return these information along with the association results.  
+5. `QTL_analysis`  Association test of the SNPs from each of the genotype data file with each of the phenotype.  
+6. `merge_info_QTL`  Combine the QTL results obtain from `QTL_analysis` with corresponding SNP information obtained from `SNP_info`.  
+7. `QTL_count_wrap`  Count the number of QTLs returned by `QTL_analysis`.  
 
-1. In your bash, go to the directory < example/ > .  
-`cd Directory/Where/You/Installed/the/Pipeline/example`  
-2. Launch R and run `Rscript GenerateExample_G.R`.  
-This will write out the files `ExampleConfig_G.config` and `Example_G.sh`, as well as update the < data/ > directory to setup the input file paths.  
-Note: this must be run under the directory example/, since R needs to use the working directory to set up the input file paths.  
-3. Run `bash Example_G.sh`.  
-4. Example results will be generated in folder < ExampleResults_G >.  
+**Report.nf**  
+1. `QTL_results_wrap`  For each of the phenotype, merge the QTL results from `QTL_count_wrap` in `Analysis.nf`, and draw phenotype histogram plot, QQ plot and Manhattan plot.  
 
 
 -end-
