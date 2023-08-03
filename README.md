@@ -194,8 +194,7 @@ All logs for each of the analyses steps will be saved in each of the subfolders.
 
 ### 5\.4 Cleaning to save space  
 *proceed with caution*: Nextflow would save all the intermediate results in the work/ directory. When the pipeline successfully finishes, it's recommended to discard the `work/` directory.  
-*proceed with caution*: QTL results can be very large. When the user is sure about the results of the association of all SNPs and all phenotypes are saved in < 5_Results_Summary >, results in < 2_SNP_info >, < 3_individual_results > and < 4_individual_results_SNPinfo > can be discarded, since < 5_Results_Summary > is the merged version of them.  
-
+*proceed with caution*: QTL results can be very large. When the user is sure about the results of the association of all SNPs and all phenotypes are saved in < 5_Results_Summary >, results in < 2_SNP_info >, < 3_individual_results > and < 4_individual_results_SNPinfo > can be discarded, since < 5_Results_Summary > is the merged version of them. However, it's highly recommended to save a copy of the null-models of each of the phenotype (`3_individual_results/nullmod_[phenotype]_[gds].rds`).  
 
 ## 6. Workflow Process Details
 The processes included in each one of the nf script:  
