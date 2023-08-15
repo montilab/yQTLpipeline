@@ -40,13 +40,13 @@ snp_assoc_txtfile <- args[7]
 pheno_dat <- readRDS(args[8])
 pval_cutoff <- as.numeric(args[9])
 
-suppressPackageStartupMessages(library(SeqArray))
-suppressPackageStartupMessages(library(GENESIS))
 suppressPackageStartupMessages(library(Biobase))
-suppressPackageStartupMessages(library(SeqVarTools))
 suppressPackageStartupMessages(library(dplyr))
-suppressPackageStartupMessages(library(SNPRelate))
 suppressPackageStartupMessages(library(data.table))
+suppressPackageStartupMessages(library(SeqArray))
+suppressPackageStartupMessages(library(SeqVarTools))
+suppressPackageStartupMessages(library(SNPRelate))
+suppressPackageStartupMessages(library(GENESIS))
 
 showfile.gds(closeall = TRUE, verbose = FALSE)
 gds <- seqOpen(gds_file)
@@ -84,8 +84,7 @@ if (run_assoc) {
   gds_sampleid <- data.frame("sample.id" = as.character(seqGetData(gds, "sample.id")))
   annot <- left_join(
     x = gds_sampleid, y = annot,
-    by = "sample.id",
-    all.x = FALSE, all.y = FALSE
+    by = "sample.id"
   )
   annot_df <- AnnotatedDataFrame(annot)
 
