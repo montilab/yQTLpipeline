@@ -71,7 +71,7 @@ if (customized_snpset) {
   cat("Start LD pruning to get SNP set for PCA...\n")
   snpset <- snpgdsLDpruning(genodat,
     method = "corr",
-    slide.max.bp = 1000000, ld.threshold = sqrt(0.1)
+    slide.max.bp = 1e8, ld.threshold = sqrt(0.1)
   )
   cat("SNP set generated.\n")
 }
