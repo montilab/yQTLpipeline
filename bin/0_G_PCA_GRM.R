@@ -3,7 +3,7 @@
 ## PCAiR ## PC_Relate ##
 ## input description:
 ##  1. gds_file  file path for .gds
-##  2. snp_PCA_txtfile  "NA" if not available; simple txt file format, only one column listing the variant id in .gds to use to calculate PC
+##  2. snp_PCA_txtfile  "NA" if not available; simple txt file format, only one column listing the annotation id in .gds to use to calculate PC
 ##  3. pcair_kinthresh  threshold, 2^(-X/2), input the X here
 ##  4. pcair_divthresh  threshold, -2^(-X/2), input the X here
 ##  5. sampleid_use_file  optional user defined sample ids to use. use "NA" to include all samples in gds
@@ -52,6 +52,8 @@ if (args[5] != "NA") {
 if (customized_snpset) {
 
   ## customized SNP set ##
+  ## PCAiR requires variant id in GDS file
+  ## But to make the mapping easier, allow the user to customize a SNP set with annotation id
   cat("Reading SNP set...\n")
   snpset <- as.character(readLines(snp_PCA_txtfile))
   cat("Retriving SNP variant id and annotation id in merged GDS file...\n")

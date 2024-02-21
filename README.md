@@ -138,7 +138,7 @@ Please do *not* leave any of these optional parameters empty. Input "NA" when th
 **PCA Parameters**  
 - `params.start_PC`  Boolean, `true` or `false` (lower case, *without* quote). Set it to be `true` to estimate genetic PCs and GRM using the *yQTL Pipeline*.  
 When `params.start_PC = true`, setup the following:  
-- `params.snpset_PCA_txtfile`  Optionally, specify a TXT file which contains the SNP IDs to be included to obtain the genetic PCs. The SNP IDs match the variant ID entry in the genotype file. Alternatively, input "NA" to prune the SNPs using LD.  
+- `params.snpset_PCA_txtfile`  Optionally, specify a TXT file which contains the SNP IDs to be included to obtain the genetic PCs. The SNP IDs match the annotation entry in the genotype file. Alternatively, input "NA" to prune the SNPs using LD.  
 - `params.pcair_kinthresh`  Numeric value. The threshold value on a `kinobj`, which is the matrix of pairwise kinship coefficients, used for declaring each pair of individuals as related or unrelated. The most commonly used value is 11, declaring the threshold to be 2^(-11/2) ~ 0.022, corresponding to 4th degree relatives. See documentation for [PC-Air](https://rdrr.io/bioc/GENESIS/man/pcair.html) for more details.  
 - `params.pcair_divthresh`  Numeric. Threshold value on a `divobj`, which the matrix of pairwise ancestry divergence measures, used for deciding if each pair of individuals is ancestrally divergent. The most commonly used value is 11, declaring the threshold to be -2^(-11/2) ~ -0.022. See documentation for [PC-Air](https://rdrr.io/bioc/GENESIS/man/pcair.html) for more details.  
 
