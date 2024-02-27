@@ -40,11 +40,11 @@ genodat <- seqOpen(gds_file)
 genodat_sampleid <- seqGetData(genodat, "sample.id")
 if (args[5] != "NA") {
   user_def_sampleid <- readLines(args[5])
-  cat("Number of user defined samples:", length(user_def_sampleid), ".\n")
+  cat("-- Number of user defined samples:", length(user_def_sampleid), ".\n")
   sampleid_use <- intersect(user_def_sampleid, genodat_sampleid)
-  cat("Number of samples available in GDS file: ", length(sampleid_use), ".\n")
+  cat("-- Number of samples available in GDS file: ", length(sampleid_use), ".\n")
 } else {
-  cat("Number of samples in GDS file:", length(genodat_sampleid), ".\n")
+  cat("-- Number of samples in GDS file:", length(genodat_sampleid), ".\n")
   sampleid_use <- genodat_sampleid
 }
 
@@ -54,9 +54,9 @@ if (customized_snpset) {
   ## customized SNP set ##
   ## PCAiR requires variant id in GDS file
   ## But to make the mapping easier, allow the user to customize a SNP set with annotation id
-  cat("Reading SNP set...\n")
+  cat("-- Reading SNP set...\n")
   snpset <- as.character(readLines(snp_PCA_txtfile))
-  cat("Retriving SNP variant id and annotation id in merged GDS file...\n")
+  cat("-- Retriving SNP variant id and annotation id in merged GDS file...\n")
   SNP_IDs <- data.frame(
     "variant.id" = seqGetData(genodat, "variant.id"),
     "annot.id" = seqGetData(genodat, "annotation/id")
@@ -64,18 +64,18 @@ if (customized_snpset) {
   SNP_IDs <- SNP_IDs %>% filter(annot.id %in% snpset)
   snpset <- SNP_IDs$variant.id
   cat(
-    "Finished.", length(snpset), "SNPs used.",
+    "-- Finished.", length(snpset), "SNPs used.",
     length(setdiff(snpset, SNP_IDs$annot.id)), "SNPs not found in GDS. \n"
   )
 } else {
 
   ## LD based correlation pruning ##
-  cat("Start LD pruning to get SNP set for PCA...\n")
+  cat("-- Start LD pruning to get SNP set for PCA...\n")
   snpset <- snpgdsLDpruning(genodat,
     method = "corr",
     slide.max.bp = 1e8, ld.threshold = sqrt(0.1)
   )
-  cat("SNP set generated.\n")
+  cat("-- SNP set generated.\n")
 }
 
 snpset <- unlist(snpset)
@@ -92,7 +92,7 @@ king <- snpgdsIBDKING(
 kingMat <- king$kinship
 dimnames(kingMat) <- list(king$sample.id, king$sample.id)
 saveRDS(king, "temp_king.rds")
-cat("king saved. \n")
+cat("-- king saved. \n\n")
 
 #### PC-AiR #### ===============================================================
 pcs <- pcair(seqData,
@@ -117,6 +117,7 @@ plot(pc_df$PC7, pc_df$PC8, cex = 1.3, cex.axis = 1.4, cex.lab = 1.4)
 dev.off()
 
 saveRDS(pc_df, "PCs.rds")
+cat("-- pcs saved. \n\n")
 
 #### PC-Relate #### ============================================================
 seqSetFilter(seqData, variant.id = snpset)
@@ -128,7 +129,7 @@ pcrel <- pcrelate(iterator,
 
 saveRDS(pcrel, "temp_pcrelate.rds")
 seqResetFilter(seqData, verbose = FALSE)
-cat("pc-relate saved. \n")
+cat("-- pc-relate saved. \n\n")
 
 ## kinship plot
 kinship <- pcrel$kinBtwn
@@ -143,9 +144,9 @@ dev.off()
 ## GRM
 grm <- pcrelateToMatrix(pcrel, scaleKin = 2)
 saveRDS(grm, "GRM.rds")
-cat("GRM saved. \n")
+cat("-- GRM saved. \n\n")
 
-cat("PC-AiR PC-Relate finish. \n")
+cat("-- PC-AiR PC-Relate finish. \n\n")
 
 date()
 sink()
