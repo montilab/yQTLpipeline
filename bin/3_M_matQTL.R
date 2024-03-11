@@ -3,12 +3,14 @@
 ## QTL analysis ## matrixeQTL ##
 
 ## input description:
-##  1 2. gds_name gds_file  file path for .gds
+##  1 2. gds_name gds_file  file name and path for .gds
 ##  3. cvrt_rds  rds file path for cvrt .rds; has column "sample.id" to match with .gds
-##  4. pval_cutoff  p-value cutoff for QTL
-##  5. shared_sampleid_file  shared sample id file, txt file generated from 0_get_sampleid.R
-##  6. snp_assoc_txtfile  file contains SNP ids to test association; use "NA" to use all SNPs
-##  7. pheno_rds  rds file path for phenotype data (each chunk); has column "sample.id" to match with .gds
+##  4. model_type  character input, one of: "linear", "category", "interaction"
+##  5. interaction_variable  the cvrt to test interaction when model_type is "interaction". Use NA as place holder otherwise.
+##  6. pval_cutoff  p-value cutoff for QTL
+##  7. shared_sampleid_file  shared sample id file, txt file generated from 0_get_sampleid.R
+##  8. snp_assoc_txtfile  file contains SNP ids to test association; use "NA" to use all SNPs
+##  9. pheno_rds  rds file path for phenotype data (each chunk); has column "sample.id" to match with .gds
 
 ## output:
 ## "2_QTL_[gds_name]_[chunk_name].log"
@@ -18,23 +20,41 @@
 args <- commandArgs(trailingOnly = TRUE)
 gds_name <- args[1]
 gds_file <- args[2]
-chunk_name <- gsub(".*phenodat_(.+).rds.*", "\\1", args[7])
+chunk_name <- gsub(".*phenodat_(.+).rds.*", "\\1", args[9])
 
 sink(paste0("3_QTL_", gds_name, "_", chunk_name, ".log"), append = FALSE, split = TRUE)
-
-cvrt_dat <- readRDS(args[3])
-pval_cutoff <- as.numeric(args[4])
-shared_sampleid <- as.character(readLines(args[5]))
-snp_assoc_txtfile <- args[6]
-pheno_dat <- readRDS(args[7])
-phenonames <- colnames(pheno_dat)[which(colnames(pheno_dat) != "sample.id")]
-
 date()
 
 suppressPackageStartupMessages(library(SNPRelate))
 suppressPackageStartupMessages(library(SeqArray))
 suppressPackageStartupMessages(library(dplyr))
 suppressPackageStartupMessages(library(MatrixEQTL))
+
+cvrt_dat <- readRDS(args[3])
+model_type <- args[4]
+if (model_type == "linear") {
+  useModel <- modelLINEAR
+} else if (model_type == "category") {
+  useModel <- modelANOVA
+} else if (model_type == "interaction") {
+  useModel <- modelLINEAR_CROSS
+  interaction_cvrt <- args[5]
+  if (is.na(interaction_cvrt) | interaction_cvrt == "NA") {
+    stop("Error: model_type is specified as \"interaction\" but no interaction covariate specified. \n")
+  }
+  if (!interaction_cvrt %in% colnames(cvrt_dat)) {
+    stop("Error: interaction covariate does not exist in the input covariate data. \n")
+  }
+  ## relocate the interaction covariate to the last column as required by using modelLINEAR_CROSS
+  cvrt_dat <- cvrt_dat %>% relocate(!!as.name(interaction_cvrt), .after = everything())
+} else {
+  stop("Error: Parameter \"model_type\" must be one of the following: \"linear\", \"category\", \"interaction\". \n")
+}
+pval_cutoff <- as.numeric(args[6])
+shared_sampleid <- as.character(readLines(args[7]))
+snp_assoc_txtfile <- args[8]
+pheno_dat <- readRDS(args[9])
+phenonames <- colnames(pheno_dat)[which(colnames(pheno_dat) != "sample.id")]
 
 showfile.gds(closeall = TRUE, verbose = FALSE)
 gds <- seqOpen(gds_file)
@@ -60,14 +80,13 @@ if (length(snpid_subset_varid) > 0) {
 }
 
 if (run_assoc) {
-
   #### convert GDS to matrix =====================================================
-  cat("## Start converting genotype data...\n")
+  cat("-- Start converting genotype data...\n")
   genomat <- snpgdsGetGeno(gds, snpfirstdim = TRUE, with.id = TRUE, snp.id = snpid_subset_varid, sample.id = shared_sampleid)
 
   colnames(genomat$genotype) <- genomat$sample.id
   rownames(genomat$genotype) <- genomat$snp.id
-  cat("## Finish convertion. \n\n")
+  cat("-- Finish convertion. \n\n")
 
   #### sort according to shared.sample.id ======================================
   geno_mat <- genomat$genotype[, match(shared_sampleid, genomat$sample.id)]
@@ -77,21 +96,20 @@ if (run_assoc) {
   cvrt_mat$sample.id <- NULL
   rownames(cvrt_mat) <- shared_sampleid
   saveRDS(cvrt_mat, "input_cvrt_pc.rds")
-  cat("## Finish reading covariates. \n\n")
+  cat("-- Finish reading covariates. \n\n")
 
   #### obtain phenotype data ===================================================
 
-  cat("## Start analyzing", chunk_name, "...\n")
+  cat("-- Start analyzing", chunk_name, "...\n")
 
   pheno_mat <- pheno_dat[match(shared_sampleid, pheno_dat$sample.id), ]
   rownames(pheno_mat) <- shared_sampleid
   pheno_mat$sample.id <- NULL
   saveRDS(pheno_mat, paste0("input_phenotype_", chunk_name, ".rds"))
 
-  cat("## Start matrixeQTL engine...\n")
+  cat("-- Start matrixeQTL engine...\n")
 
   #### matrixeQTL ####
-  useModel <- modelLINEAR
   output_file_name <- tempfile()
   errorCovariance <- numeric()
 
@@ -121,20 +139,30 @@ if (run_assoc) {
     noFDRsaveMemory = FALSE
   )
 
-  cat("## Finish matrixeQTL engine. Continue to format the result...\n")
+  cat("-- Finish matrixeQTL engine. Continue to format the result...\n")
 
   ##### QTL result -------------------------------------------------------------
   QTL_res_df <- me$all$eqtls
 
   if (nrow(QTL_res_df) > 0) {
     assoc_has_result <- TRUE
-    cat("## Finish QTL analysis.\n\n")
+    cat("-- Finish QTL analysis.\n\n")
 
     ## rename columns; flip the direction of the effect estimate so it will be the effect of ALT
-    QTL_res_df <- QTL_res_df %>%
-      rename(variant.id = snps, phenotype = gene) %>%
-      mutate(statistic = (-1) * statistic, beta = (-1) * beta, FDR = NULL) %>% 
-      rename(beta.ca = beta, statistic.ca = statistic)
+    if (model_type == "linear") {
+      QTL_res_df <- QTL_res_df %>%
+        mutate(statistic = (-1) * statistic, beta = (-1) * beta, FDR = NULL) %>%
+        rename(variant.id = snps, phenotype = gene, beta.ca = beta, statistic.ca = statistic)
+    } else if (model_type == "category") {
+      c("variant.id", "phenotype", "statistic.anova", "pvalue")
+      QTL_res_df <- QTL_res_df %>%
+        mutate(FDR = NULL) %>%
+        rename(variant.id = snps, phenotype = gene, statistic.anova = statistic)
+    } else if (model_type == "interaction") {
+      QTL_res_df <- QTL_res_df %>%
+        mutate(statistic = (-1) * statistic, beta = (-1) * beta, FDR = NULL) %>%
+        rename(variant.id = snps, phenotype = gene, beta.inter = beta, statistic.inter = statistic)
+    }
 
     saveRDS(QTL_res_df, paste0("QTL_", gds_name, "_", chunk_name, ".rds"))
 
@@ -157,7 +185,7 @@ if (run_assoc) {
       QTLcount <- rbind(QTLcount, QTLcount2)
     }
 
-    cat("## Finish saving results for", gds_name, "_", chunk_name, ".\n\n")
+    cat("-- Finish saving results for", gds_name, "_", chunk_name, ".\n\n")
   } else {
     assoc_has_result <- FALSE
     cat(paste("Message: all phenotypes in", chunk_name, gds_name, "do not have QTLs passed threshold.\n"))
@@ -168,28 +196,30 @@ if (run_assoc) {
       "description" = "noQTL"
     )
   }
-} else {
-  cat(paste("Message:", gds_name, "do not contain any input SNPs.\n"))
+}
+
+if (!run_assoc | !assoc_has_result) {
+  if (useModel == modelLINEAR) QTL_expected_colnames <- c("variant.id", "phenotype", "statistic.ca", "pvalue", "beta.ca")
+  if (useModel == modelANOVA) QTL_expected_colnames <- c("variant.id", "phenotype", "statistic.anova", "pvalue")
+  if (useModel == modelLINEAR_CROSS) QTL_expected_colnames <- c("variant.id", "phenotype", "statistic.inter", "pvalue", "beta.inter")
+
+  QTL_psedo_res <- data.frame(matrix(ncol = length(QTL_expected_colnames), nrow = 0))
+  colnames(QTL_psedo_res) <- QTL_expected_colnames
+  saveRDS(QTL_psedo_res, paste0("QTL_noQTL_", gds_name, "_", chunk_name, ".rds"))
+
   QTLcount <- data.frame(
     "phenotype" = phenonames,
     "genotype_dat" = gds_name,
     "QTL_num" = 0,
-    "description" = "no_input_SNP"
+    "description" = "no_result"
   )
-}
-
-if (!run_assoc | !assoc_has_result) {
-  QTL_expected_colnames <- c("variant.id", "phenotype", "statistic.ca", "pvalue", "beta.ca")
-  QTL_psedo_res <- data.frame(matrix(ncol = length(QTL_expected_colnames), nrow = 0))
-  colnames(QTL_psedo_res) <- QTL_expected_colnames
-  saveRDS(QTL_psedo_res, paste0("QTL_noQTL_", gds_name, "_", chunk_name, ".rds"))
 }
 
 write.table(QTLcount, paste0("QTL_count_", gds_name, "_", chunk_name, ".txt"),
   quote = F, sep = "\t", col.names = T, row.names = F
 )
 
-cat("## Finish. \n")
+cat("-- Finish. \n")
 
 closefn.gds(gds)
 date()
