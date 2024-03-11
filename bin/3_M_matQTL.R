@@ -11,11 +11,14 @@
 ##  7. shared_sampleid_file  shared sample id file, txt file generated from 0_get_sampleid.R
 ##  8. snp_assoc_txtfile  file contains SNP ids to test association; use "NA" to use all SNPs
 ##  9. pheno_rds  rds file path for phenotype data (each chunk); has column "sample.id" to match with .gds
+##  10. draw_genopheno_boxplot  "true" to draw genotype-phenotype boxplot for top SNP in each chromosome
+##  11. boxplot_p_cutoff  the p-value cutoff to draw genotype-phenotype boxplot
 
 ## output:
 ## "2_QTL_[gds_name]_[chunk_name].log"
 ## "QTL_[gds_name]_[chunk_name].rds"
-## QTL_count_[gds_name]_[chunk_name].txt"
+## "QTL_count_[gds_name]_[chunk_name].txt"
+## "[phenoname]_[snp_name].png" if draw genotyoe-phenotype boxplot
 
 args <- commandArgs(trailingOnly = TRUE)
 gds_name <- args[1]
@@ -28,6 +31,8 @@ date()
 suppressPackageStartupMessages(library(SNPRelate))
 suppressPackageStartupMessages(library(SeqArray))
 suppressPackageStartupMessages(library(dplyr))
+suppressPackageStartupMessages(library(tidyverse))
+suppressPackageStartupMessages(library(ggplot2))
 suppressPackageStartupMessages(library(MatrixEQTL))
 
 cvrt_dat <- readRDS(args[3])
@@ -56,6 +61,11 @@ snp_assoc_txtfile <- args[8]
 pheno_dat <- readRDS(args[9])
 phenonames <- colnames(pheno_dat)[which(colnames(pheno_dat) != "sample.id")]
 
+if (args[10] == "true") {
+  draw_genopheno_boxplot <- TRUE
+  boxplot_p_cutoff <- as.numeric(args[11])
+}
+
 showfile.gds(closeall = TRUE, verbose = FALSE)
 gds <- seqOpen(gds_file)
 run_assoc <- FALSE
@@ -82,7 +92,10 @@ if (length(snpid_subset_varid) > 0) {
 if (run_assoc) {
   #### convert GDS to matrix =====================================================
   cat("-- Start converting genotype data...\n")
-  genomat <- snpgdsGetGeno(gds, snpfirstdim = TRUE, with.id = TRUE, snp.id = snpid_subset_varid, sample.id = shared_sampleid)
+  genomat <- snpgdsGetGeno(gds,
+    snpfirstdim = TRUE, with.id = TRUE,
+    snp.id = snpid_subset_varid, sample.id = shared_sampleid
+  )
 
   colnames(genomat$genotype) <- genomat$sample.id
   rownames(genomat$genotype) <- genomat$snp.id
@@ -165,6 +178,87 @@ if (run_assoc) {
     }
 
     saveRDS(QTL_res_df, paste0("QTL_", gds_name, "_", chunk_name, ".rds"))
+
+    #### draw phenotype-genotype boxplot ---------------------------------------
+    if (draw_genopheno_boxplot & min(QTL_res_df$pvalue) < boxplot_p_cutoff) {
+      cat("-- Start plotting genotype phenotype box plot for top significant SNPs... \n")
+
+      ## first, obtain all SNPs passed p threshold
+      QTL_res_sub <- QTL_res_df %>%
+        select(variant.id, phenotype, pvalue) %>%
+        filter(pvalue < boxplot_p_cutoff)
+
+      ## subset GDS to only selected variants
+      seqSetFilter(gds, variant.id = QTL_res_sub$variant.id, sample.id = shared_sampleid)
+
+      ## obtain SNP information
+      SNP_info_sub <- data.frame(
+        "variant.id" = seqGetData(gds, "variant.id"),
+        "REF" = seqGetData(gds, "$ref"),
+        "ALT" = seqGetData(gds, "$alt"),
+        "chr" = seqGetData(gds, "chromosome"),
+        "pos" = seqGetData(gds, "position")
+      )
+
+      ## for each phenotype, for each chromosome, only keep the top SNP
+      ## sometimes multiple SNPs have the same p-value. keep the smallest pos
+      merged_sub <- merge(x = SNP_info_sub, y = QTL_res_sub, by = "variant.id", all = T)
+      merged_sub_filtered <- merged_sub %>%
+        group_by(phenotype, chr) %>%
+        arrange(pos) %>%
+        slice_min(order_by = pvalue) %>%
+        distinct(phenotype, chr, .keep_all = TRUE) %>%
+        as.data.frame()
+
+      ## obtain genotype information for plotting
+      geno_mat_sub <- snpgdsGetGeno(gds,
+        snpfirstdim = TRUE, with.id = TRUE,
+        snp.id = merged_sub_filtered$variant.id, sample.id = shared_sampleid
+      )
+      colnames(geno_mat_sub$genotype) <- geno_mat_sub$sample.id
+      rownames(geno_mat_sub$genotype) <- geno_mat_sub$snp.id
+      geno_mat_sub <- as.data.frame(t(geno_mat_sub$genotype)) %>%
+        mutate(across(everything(), ~ factor(case_when(
+          . == 0 ~ "Alt/Alt",
+          . == 1 ~ "Ref/Alt",
+          . == 2 ~ "Ref/Ref",
+          TRUE ~ as.character(.)
+        ), levels = c("Ref/Ref", "Ref/Alt", "Alt/Alt")))) %>%
+        rownames_to_column(var = "sample.id")
+
+      ## merge genotype and phenotype data
+      plot_pheno_dat <- merge(
+        x = geno_mat_sub,
+        y = pheno_dat %>% select(sample.id, all_of(merged_sub_filtered$phenotype)),
+        by = "sample.id", all.x = T, all.y = F
+      )
+      ## this df contains all we need but each phenotype will only be plotted against a limited set of SNPs
+
+      ## plot for each phenotype
+      for (phenotype0 in merged_sub_filtered$phenotype) {
+        ## SNPs for this phenotype to plot:
+        variants_to_plot <- merged_sub_filtered %>%
+          filter(phenotype == phenotype0) %>%
+          pull(variant.id)
+
+        ## plot for each SNP
+        for (variant0 in variants_to_plot) {
+          snp_name0 <- paste0("chr", paste(merged_sub_filtered %>% filter(variant.id == variant0) %>% select(chr, pos, REF, ALT) %>% as.character(), collapse = "_"))
+          snp_column0 <- as.character(variant0)
+          png(paste0(phenotype0, "_", snp_name0, ".png"), width = 600, height = 400, res = 120)
+          print(
+            ggplot(plot_pheno_dat, aes(x = !!as.name(snp_column0), y = !!as.name(phenotype0), fill = !!as.name(snp_column0))) +
+              geom_boxplot() +
+              theme_minimal() +
+              xlab(snp_name0) +
+              theme(legend.position = "none") +
+              scale_fill_manual(values = c("#E5A1C3", "#A1A1E5", "#A1E5C3")) +
+              ggtitle(paste(phenotype0, "x", snp_name0))
+          )
+          dev.off()
+        }
+      }
+    }
 
     ##### QTL count table ------------------------------------------------------
     QTLcount <- QTL_res_df %>%

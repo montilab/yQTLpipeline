@@ -111,7 +111,7 @@ process M_QTL_analysis {
 
     script:
     """
-    3_M_matQTL.R $gds_name $gds_file $cvrt_use ${params.model_type} ${params.interaction_cvrt} ${params.pval_cutoff} $shared_sampleid ${params.snpset_assoc_txtfile} $pheno_rds 
+    3_M_matQTL.R $gds_name $gds_file $cvrt_use ${params.model_type} ${params.interaction_cvrt} ${params.pval_cutoff} $shared_sampleid ${params.snpset_assoc_txtfile} $pheno_rds ${params.draw_genopheno_boxplot} ${params.boxplot_p_cutoff} 
     """
 }
 

@@ -57,6 +57,26 @@ process M_QTL_results_wrap {
     """
 }
 
+process M_move_boxplot {
+    publishDir "${params.outdir}/5_Results_Summary/top_SNP_boxplots", mode: 'copy'
+
+    input:
+    val QTL_assoc_dir
+    
+    output:
+    path '*'
+
+    script:
+    """
+    if ls $QTL_assoc_dir/*.png >/dev/null 2>/dev/null; then
+    mv $QTL_assoc_dir/*.png .
+    fi
+    # discard all standard ls output and all error, `2`, to /dev/null. 
+    # if ls command is not an error, i.e. png files exists, execute mv command. 
+
+    echo "If no png file appears, it means there are no genotype-phenotype boxplot found. \nIf you think this is a mistake, check 3_individual_results/ folder. \n" > finished.txt
+    """
+}
 
 // ##### GENESIS ###############################################################
 
@@ -85,6 +105,9 @@ if (params.pipeline_engine == "matrixeqtl" | params.pipeline_engine == "m") {
     phenodat_chunk = channel.fromPath("${params.outdir}/1_phenotype_data_chunk/phenodat_*.rds").flatten()
     QTL_assoc_winfo_dir = "${params.outdir}/4_individual_results_SNPinfo/"
     M_QTL_results_wrap(phenodat_chunk, QTL_assoc_winfo_dir)
+    if (params.draw_genopheno_boxplot == "true") {
+        M_move_boxplot("${params.outdir}/3_individual_results")
+    }
 }
 
 if (params.pipeline_engine == "genesis" | params.pipeline_engine == "g") {
