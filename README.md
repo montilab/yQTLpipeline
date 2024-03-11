@@ -145,7 +145,7 @@ When `params.start_PC = true`, setup the following:
 
 **Plotting Parameters**  
 These parameters only control the plots and will not filter the QTL results in RDS or CSV.  
-- `params.plot_mac`  Numeric value. The minimum minor allele count (MAC) for a SNP to be included in the QQ plot and Manhattan plot to avoid artefects caused by too little observation. Commonly used values for rare SNPs is 3 or 5, while 20 for common SNPs.  
+- `params.plot_mac`  Numeric value. The minimum minor allele count (MAC) for a SNP to be included in the QQ plot, Manhattan plot and Miami plot to avoid artefects caused by too little observation. Commonly used values for rare SNPs is 3 or 5, while 20 for common SNPs.  
 - `params.plot_resolution`  Numeric value. The resolution dpi to save the plots. Commonly used values including 72, 100, and 120.  
 - `params.plot_size`  Numeric value. Control the size of the plots in pixels. Commonly used values including 400 and 600.  
 
@@ -192,8 +192,7 @@ The results will be saved in the directory spcified in `params.outdir`, with the
 - < 4_individual_results_SNPinfo >. Combined < 3_individual_results > with the corresponding SNP information in < 2_SNP_info >.  
 
 ### 5\.2 Results and reports  
-- **< 5_Results_Summary >**. Contains the QTL results of each one of the phenotype in RDS format, the count table of the number of QTL identified, as well as the phenotype expression histogram, QQ plot and Manhattan plot of each phenotype.  
- If the QTL results are too large to be merged into a single file, you can obtain them and merge them in < 4_individual_results_SNPinfo >.  
+- **< 5_Results_Summary >**. Contains the QTL results of each one of the phenotype in RDS format, the count table of the number of QTL identified, as well as the phenotype expression histogram, QQ plot, Manhattan plot and Miami plot of each of the phenotypes. If the QTL results are too large to be merged into a single file, you can obtain them and merge them in < 4_individual_results_SNPinfo >.  
 
 ### 5\.3 Logs  
 All logs for each of the analyses steps will be saved in each of the subfolders.  
@@ -223,7 +222,7 @@ The processes included in each one of the nf script:
 7. `QTL_count_wrap`  Count the number of QTLs returned by `QTL_analysis`.  
 
 **Report.nf**  
-1. `QTL_results_wrap`  For each of the phenotype, merge the QTL results from `QTL_count_wrap` in `Analysis.nf`, and draw phenotype histogram plot, QQ plot and Manhattan plot.  
+1. `QTL_results_wrap`  For each of the phenotype, merge the QTL results from `QTL_count_wrap` in `Analysis.nf`, and draw phenotype histogram plot, QQ plot, Manhattan plot and Miami plot.  
 
 
 -end-
