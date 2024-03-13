@@ -61,6 +61,8 @@ snp_assoc_txtfile <- args[8]
 pheno_dat <- readRDS(args[9])
 phenonames <- colnames(pheno_dat)[which(colnames(pheno_dat) != "sample.id")]
 
+draw_genopheno_boxplot <- FALSE
+boxplot_p_cutoff <- 1
 if (args[10] == "true") {
   draw_genopheno_boxplot <- TRUE
   boxplot_p_cutoff <- as.numeric(args[11])
