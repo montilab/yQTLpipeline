@@ -227,7 +227,7 @@ process G_QTL_analysis {
 
     script:
     """
-    3_G_nullmod_assoc.R $gds_name $gds_file ${params.genotype_or_dosage} $cvrt_use ${params.GRM_rds} $shared_sampleid ${params.snpset_assoc_txtfile} $pheno_rds ${params.pval_cutoff}
+    3_G_nullmod_assoc.R $gds_name $gds_file ${params.genotype_or_dosage} $cvrt_use ${params.GRM_rds} ${params.pval_cutoff} $shared_sampleid ${params.snpset_assoc_txtfile} $pheno_rds ${params.draw_genopheno_boxplot} ${params.boxplot_p_cutoff} 
     """
 }
 

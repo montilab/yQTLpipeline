@@ -76,7 +76,7 @@ if (!is.null(QTLres)) {
 
   #### Miami plot ####
   ylim <- max(-log10(QTLres$Score.pval)) + 0.2
-  png(filename = paste0(plot_dir, "miami_", pheno_name0, ".png"), width = plot_size * 2.5, height = plot_size * 1.5, res = plot_resolution)
+  png(filename = paste0(plot_dir, "miami_", phenoname, ".png"), width = plot_size * 2.5, height = plot_size * 1.5, res = plot_resolution)
   par(mfrow = c(2, 1))
   par(mar = c(1.3, 3, 3, 3))
   manhattan(QTLres %>% filter(Est.ca > 0), ylim = c(0, ylim), chr = "chr", bp = "pos", snp = "variant.id", p = "Score.pval")

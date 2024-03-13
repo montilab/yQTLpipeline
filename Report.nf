@@ -57,7 +57,26 @@ process M_QTL_results_wrap {
     """
 }
 
-process M_move_boxplot {
+// ##### GENESIS ###############################################################
+
+process G_QTL_results_wrap {
+    publishDir "${params.outdir}/5_Results_Summary", mode: 'move'
+
+    input:
+    path individual_phenodat
+    val QTL_assoc_winfo_dir
+    
+    output:
+    path '*'
+
+    script:
+    """
+    5_G_wrap_QTL_results.R $individual_phenodat $QTL_assoc_winfo_dir ${params.output_result_csv} ${params.plot_mac} ${params.plot_resolution} ${params.plot_size} 
+    """
+}
+
+// ##### shared ################################################################
+process move_boxplot {
     publishDir "${params.outdir}/5_Results_Summary/top_SNP_boxplots", mode: 'copy'
 
     input:
@@ -78,25 +97,6 @@ process M_move_boxplot {
     """
 }
 
-// ##### GENESIS ###############################################################
-
-process G_QTL_results_wrap {
-    publishDir "${params.outdir}/5_Results_Summary", mode: 'move'
-
-    input:
-    path individual_phenodat
-    val QTL_assoc_winfo_dir
-    
-    output:
-    path '*'
-
-    script:
-    """
-    5_G_wrap_QTL_results.R $individual_phenodat $QTL_assoc_winfo_dir ${params.output_result_csv} ${params.plot_mac} ${params.plot_resolution} ${params.plot_size} 
-    """
-}
-
-
 // ##### workflow ##############################################################
 
 workflow { 
@@ -105,15 +105,16 @@ if (params.pipeline_engine == "matrixeqtl" | params.pipeline_engine == "m") {
     phenodat_chunk = channel.fromPath("${params.outdir}/1_phenotype_data_chunk/phenodat_*.rds").flatten()
     QTL_assoc_winfo_dir = "${params.outdir}/4_individual_results_SNPinfo/"
     M_QTL_results_wrap(phenodat_chunk, QTL_assoc_winfo_dir)
-    if (params.draw_genopheno_boxplot == "true") {
-        M_move_boxplot("${params.outdir}/3_individual_results")
-    }
 }
 
 if (params.pipeline_engine == "genesis" | params.pipeline_engine == "g") {
     individual_phenodat = channel.fromPath("${params.outdir}/1_phenotype_data/*.rds").flatten()
     QTL_assoc_winfo_dir = "${params.outdir}/4_individual_results_SNPinfo/"
     G_QTL_results_wrap(individual_phenodat, QTL_assoc_winfo_dir)
+}
+
+if (params.draw_genopheno_boxplot == "true") {
+    move_boxplot("${params.outdir}/3_individual_results")
 }
 
 }
