@@ -17,6 +17,9 @@ P-value Cutoff     : $params.pval_cutoff
 """
 
 // ##### Not used process to aviod warnings from sge.config ####################
+
+process qc_filters {script:""" """}
+
 process M_vcf_to_gds {script:""" """}
 process M_write_gds_list {script:""" """}
 process M_merge_gds {script:""" """}
@@ -30,6 +33,8 @@ process G_merge_gds {script:""" """}
 process G_PCA_GRM {script:""" """}
 
 process G_QTL_results_wrap {script:""" """}
+
+process move_boxplot {script:""" """}
 
 // ##### MatrixeQTL ############################################################
 

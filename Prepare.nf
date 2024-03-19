@@ -3,6 +3,9 @@ nextflow.enable.dsl=2
 // nextflow.enable.configprocessNamesValidation = false
 
 // ##### Not used process to aviod warnings from sge.config ####################
+
+process qc_filters {script:""" """}
+
 process M_get_shared_sampleid {script:""" """} 
 process M_split_pheno {script:""" """} 
 process M_prepare_cvrt {script:""" """} 
@@ -22,6 +25,8 @@ process G_merge_info_QTL {script:""" """}
 process G_QTL_count_wrap {script:""" """} 
 
 process G_QTL_results_wrap {script:""" """}
+
+process move_boxplot {script:""" """}
 
 // ##### MatrixeQTL ############################################################
 

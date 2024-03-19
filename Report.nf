@@ -13,6 +13,9 @@ Output Directory   : $params.outdir
 params.output_result_csv = false
 
 // ##### Not used process to aviod warnings from sge.config ####################
+
+process qc_filters {script:""" """}
+
 process M_vcf_to_gds {script:""" """} 
 process M_write_gds_list {script:""" """} 
 process M_merge_gds {script:""" """} 
