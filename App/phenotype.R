@@ -1,27 +1,39 @@
+source("manhattan_plot.R")
+
 phenotype_ui <- tabPanel(
-  "phenotype",
-  titlePanel("Analyze phenotype"),
+  "Phenotype",
+  titlePanel("Manhattan & Miami Plot of a Phenotype"),
   fluidRow(column(12, paste(rep("-", 100), collapse = ""))),
-  selectizeInput(inputId = "select_phenotype", label = "Select phenotype", choices = NULL, multiple = FALSE),
-  textAreaInput(inputId = "select_snp", label = "Select SNP (seperate by ',')", value = "", placeholder = "", rows = 4),
-  sliderInput(
-    inputId = "pval_cutoff",
-    label = "p-value cutoff 1e-?",
-    value = 7.5, min = 1, max = 15, step = 0.1
-  ),
-  numericInput(
-    inputId = "mac_cutoff",
-    label = "MAC cutoff >= ?",
-    value = 3, min = 1, max = NA, step = 1
-  ),
-  actionButton("pheno_anal_GO", label = "Analyze phenotype"),
-  dq_space(),
-  htmlOutput("pheno_anal_text"),
-  conditionalPanel(
-    condition = "output.pheno_anal_text",
-    reactableOutput("pheno_anal_res_df"),
-    # downloadButton("pheno_anal_mhtplot_download", "Download plot"),
-    plotOutput("pheno_anal_mhtplot")
+  fluidRow(
+    column(
+      3,
+      selectizeInput(inputId = "select_phenotype", label = "Select phenotype", choices = NULL, multiple = FALSE),
+      textAreaInput(inputId = "select_snp", label = "Select a subset of SNPs in snpID column (seperate by ',') to color in the plots", value = "", placeholder = "", rows = 4),
+      sliderInput(
+        inputId = "pval_cutoff",
+        label = "p-value cutoff 1e-?",
+        value = 7.5, min = 1, max = 15, step = 0.1
+      ),
+      numericInput(
+        inputId = "mac_cutoff",
+        label = "MAC cutoff >= ?",
+        value = 3, min = 1, max = NA, step = 1
+      ),
+      actionButton("pheno_anal_GO", label = "Analyze phenotype")
+    ),
+    column(
+      9,
+      htmlOutput("pheno_anal_text"),
+      conditionalPanel(
+        condition = "output.pheno_anal_text",
+        HTML("<p><b>Manhattan plot</b>:</p> "),
+        plotOutput("pheno_anal_mhtplot"),
+        HTML("<p><b>Miami plot</b>: </p>"),
+        plotOutput("pheno_anal_miamiplot"),
+        HTML("<p><b>Top SNPs: </b></p>"),
+        reactableOutput("pheno_anal_res_df")
+      )
+    )
   ),
   fluidRow(column(12, paste(rep("-", 100), collapse = "")))
 )
@@ -62,21 +74,28 @@ phenotype_server <- function(input, output, session, QTLres_var) {
     }
   })
 
+  SNP_subet <- eventReactive(eventExpr = input$pheno_anal_GO, {
+    if (input$select_snp != "") {
+      select_snpid <- input$select_snp
+      select_snpid <- gsub(" ", "", select_snpid, fixed = TRUE)
+      select_snpid <- gsub("\n", "", select_snpid, fixed = TRUE)
+      select_snpid <- unlist(strsplit(select_snpid, ","))
+    }
+    return(select_snpid)
+  })
+
   pheno_anal_res_df_var <- eventReactive(eventExpr = input$pheno_anal_GO, {
     res <- QTLres_var
     if (input$select_phenotype != "[All phenotypes]") {
       res <- res %>% filter(phenotype == input$select_phenotype)
     }
     if (input$select_snp != "") {
-      select_snpid <- input$select_snp
-      select_snpid <- gsub(" ", "", select_snpid, fixed = TRUE)
-      select_snpid <- gsub("\n", "", select_snpid, fixed = TRUE)
-      select_snpid <- unlist(strsplit(select_snpid, ","))
-      res <- res %>% filter(snpID %in% select_snpid)
+      res <- res %>% filter(snpID %in% SNP_subet())
     }
     res <- res %>%
       filter(pvalue <= 1 / 10^(input$pval_cutoff), MAC >= input$mac_cutoff) %>%
-      arrange(pvalue)
+      arrange(pvalue) %>%
+      head(10)
     return(reactable(res))
   })
 
@@ -91,15 +110,58 @@ phenotype_server <- function(input, output, session, QTLres_var) {
       res <- res %>% filter(phenotype == pheno_name)
     }
     res <- res %>% filter(MAC >= input$mac_cutoff)
-    return(manhattan(
+    highlight_SNPs <- NULL
+    if (input$select_snp != "") {
+      highlight_SNPs <- SNP_subet()
+    }
+    mht_plot <- manhattan(
       x = res, chr = "chr", bp = "pos", snp = "snpID", p = "pvalue",
+      highlight = highlight_SNPs,
       genomewideline = pheno_anal_text_var()$pval_cutoff,
       main = paste(pheno_name, "( mac", input$mac_cutoff, ")")
+    )
+    return(mht_plot)
+  })
+
+  pheno_anal_miamiplot_var <- eventReactive(eventExpr = input$pheno_anal_GO, {
+    res <- QTLres_var
+    pheno_name <- input$select_phenotype
+    if (pheno_name != "[All phenotypes]") {
+      res <- res %>% filter(phenotype == pheno_name)
+    }
+    res <- res %>% filter(MAC >= input$mac_cutoff)
+    highlight_SNPs <- NULL
+    if (input$select_snp != "") {
+      highlight_SNPs <- SNP_subet()
+    }
+    par(mfrow = c(2, 1))
+    par(mar = c(1.3, 3, 3, 3))
+    ylim <- max(-log10(res$pvalue)) + 0.2
+    miami_plot <- manhattan(
+      res %>% filter(beta > 0),
+      ylim = c(0, ylim),
+      chr = "chr", bp = "pos", snp = "snpID", p = "pvalue",
+      highlight = highlight_SNPs,
+      genomewideline = pheno_anal_text_var()$pval_cutoff,
+      main = paste(pheno_name, "( mac", input$mac_cutoff, ")")
+    )
+    par(mar = c(3, 3, 1.3, 3))
+    miami_plot <- c(miami_plot, manhattan(
+      res %>% filter(beta < 0),
+      ylim = c(ylim, 0), xlab = "", xaxt = "n",
+      chr = "chr", bp = "pos", snp = "snpID", p = "pvalue",
+      highlight = highlight_SNPs,
+      genomewideline = pheno_anal_text_var()$pval_cutoff
     ))
+    return(miami_plot)
   })
 
   output$pheno_anal_mhtplot <- renderPlot({
     pheno_anal_mhtplot_var()
+  })
+
+  output$pheno_anal_miamiplot <- renderPlot({
+    pheno_anal_miamiplot_var()
   })
 
   output$pheno_anal_mhtplot_download <- downloadHandler(
