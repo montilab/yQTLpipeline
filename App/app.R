@@ -2,11 +2,15 @@ library(shiny)
 library(dqshiny)
 library(reactable)
 library(igraph)
-library(qqman)
+library(SeqArray)
 library(dplyr)
+library(ggplot2)
+
 options(shiny.maxRequestSize = 30 * 1024^2)
+source("table_preview.R", local = TRUE)
 source("phenotype.R", local = TRUE)
 source("network.R", local = TRUE)
+source("genopheno.R", local = TRUE)
 
 ui <- fluidPage(
   titlePanel("QTL Visualization"),
@@ -14,17 +18,15 @@ ui <- fluidPage(
     inputId = "QTLres", label = "Choose QTL Result",
     multiple = FALSE
   ),
-  HTML(c(
-    "<p>The input needs to be a dataframe with columns: chr, pos, snpID or variant.id, phenotype, pvalue or Score.pval, beta or Est, mac or MAC.</p>",
-    "<p>Preview available after upload...</p>"
-  )),
-  reactableOutput("QTL_df_preview"),
+  HTML("<p>The input needs to be a dataframe with columns: chr, pos, snpID or variant.id, phenotype, pvalue or Score.pval, beta or Est, mac or MAC.</p>"),
   tabsetPanel(
     type = "tabs",
+    table_preview_ui,
     phenotype_ui,
+    genopheno_ui,
     network_ui
   )
-) # end of FluidPage
+)
 
 server <- function(input, output, session) {
   QTLres_var <- reactive({
@@ -38,16 +40,10 @@ server <- function(input, output, session) {
     res$snpID[which(is.na(res$snpID))] <- paste0("snp", res$variant.id[which(is.na(res$snpID))])
     return(res)
   })
-  output$QTL_df_preview <- renderReactable({
-    updateSelectizeInput(
-      session = session,
-      inputId = "select_phenotype",
-      choices = c("[All phenotypes]", unique(QTLres_var()$phenotype)), selected = "[All phenotypes]"
-    )
-    return(reactable(head(QTLres_var(), 3)))
-  })
 
+  table_preview_server(input, output, session, QTLres_var = QTLres_var())
   phenotype_server(input, output, session, QTLres_var = QTLres_var())
+  genopheno_server(input, output, session)
   network_server(input, output, session, QTLres_var = QTLres_var())
 }
 
