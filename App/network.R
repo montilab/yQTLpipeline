@@ -1,6 +1,6 @@
 network_ui <- tabPanel(
-  "network",
-  titlePanel("network"),
+  "Network",
+  titlePanel("Network of SNPs vs Phenotypes"),
   fluidRow(column(12, paste(rep("-", 100), collapse = ""))),
   sliderInput(
     inputId = "nw_pval_cutoff",
