@@ -11,6 +11,8 @@ writeLines(paste0('includeConfig \'', dir, '/configs/local.config\'
 params.outdir = "$PWD/ExampleResults_M"
 params.datdir = "', dir, '/data"
 params.pipeline_engine = "matrixeqtl"
+params.model_type = "linear"
+params.interaction_cvrt = "age"
 
 // Genotype data input:
 params.genodat_format = "vcf"
@@ -48,9 +50,11 @@ params.pval_cutoff = 1
 params.output_result_csv = "true"
 
 // Plotting parameters:
-params.plot_mac = 3
-params.plot_resolution = 100
-params.plot_size = 400
+params.draw_genopheno_boxplot = "true"
+params.boxplot_p_cutoff = 5e-8
+params.plot_mac = 3 
+params.plot_resolution = 100 
+params.plot_size = 400 
 '),
   con = "ExampleConfig_M.config"
 )

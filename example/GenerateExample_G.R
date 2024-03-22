@@ -47,9 +47,11 @@ params.pval_cutoff = 1
 params.output_result_csv = "true"
 
 // Plotting parameters:
-params.plot_mac = 3
-params.plot_resolution = 100
-params.plot_size = 400
+params.draw_genopheno_boxplot = "true"
+params.boxplot_p_cutoff = 5e-8
+params.plot_mac = 3 
+params.plot_resolution = 100 
+params.plot_size = 400 
 '),
   con = "ExampleConfig_G.config"
 )
