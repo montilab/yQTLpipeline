@@ -267,6 +267,6 @@ QTL results consist of multiple phenotypes and variants. Therefore, we offer an 
 Next, select a p-value threshold and MAC (minor allele count) threshold, and plot the network.  
 Since genetic variants are oftentimes in high linkage disequilibrium (LD) with each other, only the top variant in each chromosome will be included.  
 
-![image](./vignette/figs/pic7_nw1.png)  
+![image](./vignette/figs/pic7_nw.png)  
 
 -end-
