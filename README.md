@@ -21,7 +21,7 @@ We developed the _yQTL Pipeline_ – with ‘y’ indicating the dependent quant
 - [4.Input File Examples](https://github.com/montilab/yQTL-Pipeline#4-input-file-examples)  
 - [5.Output Descriptions](https://github.com/montilab/yQTL-Pipeline#5-output-descriptions)  
 - [6.Workflow Process Details](https://github.com/montilab/yQTL-Pipeline#6-workflow-process-details)  
-- **[7.Shiny App](https://github.com/montilab/yQTL-Pipeline#7-Shiny-App-Usage)**  
+- **[7.Shiny App](https://github.com/montilab/yQTL-Pipeline#7-shiny-app-usage)**  
 
 
 ## 1\. Setup 
@@ -239,7 +239,7 @@ We developed an R Shiny App available in the App folder to facilitate downstream
 Open app.R using R studio, and click the `Run App` button at the top right.  
 
 ### 7\.1 Upload QTL analysis result as an RDS file 
-![image](files:./vignette/figs/pic1_preview.png)  
+![image](./vignette/figs/pic1_preview.png)  
 The uploaded QTL result is a data frame including the following columns:  
 - chr  
 - pos  
@@ -253,23 +253,23 @@ An example is provided as `N2-acetyl,N6-methyllysine_Example.rds`.
 
 ### 7\.2 Manhattan and Miami plots 
 Select a phenotype in the dropdown menu, specify the significance p-value threshold, and provide a list of SNP to highlight in the plots (optional).  
-![image](files:./vignette/figs/pic2_mht.png)  
-![image](files:./vignette/figs/pic3_miami.png)  
+![image](./vignette/figs/pic2_mht.png)  
+![image](./vignette/figs/pic3_miami.png)  
 
 ### 7\.3 Genotype-Phenotype boxplot 
 First, upload a GDS file, and a phenotype file in RDS or CSV format. Specify a variant from the "annotation/id" entry in the GDS file. Click "Retrieve Data". If successful, a new drop-down menu and plotting button will appear.  
 For example, you can use 'data/gds/chr_1.gds' for the GDS file and 'data/pheno_file.csv' for the phenotype file. Select variant '1:1000156'.  
 Second, select a phenotype from the new drop-down menu and click "Plot Boxplot".  
-![image](files:./vignette/figs/pic6_box3.png)  
+![image](./vignette/figs/pic6_box3.png)  
 
 ### 7\.4 Network of variants and phenotypes 
 QTL results consist of multiple phenotypes and variants. Therefore, we offer an option to visualize the associations as a network. For example, upload `Network_Example.rds` to the "Choose QTL result" file input at the top.  
 Next, select a p-value threshold and MAC (minor allele count) threshold, and plot the network.  
 
-![image](files:./vignette/figs/pic7_nw1.png)  
+![image](./vignette/figs/pic7_nw1.png)  
 
 Since genetic variants are oftentimes in high linkage disequilibrium (LD) with each other, only the top variant in each chromosome will be included.  
-![image](files:./vignette/figs/pic7_nw2.png)  
+![image](./vignette/figs/pic7_nw2.png)  
 
 
 -end-
