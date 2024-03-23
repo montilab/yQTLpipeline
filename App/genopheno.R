@@ -1,32 +1,37 @@
 genopheno_ui <- tabPanel(
-  "Genotype-Phenotype Boxplot",
-  titlePanel("Boxplot of a phenotype vs genotype of a SNP"),
-  HTML("<p>(1) Upload genotype data GDS in RDS format and Phenotype data in RDS or CSV format. Type in a SNP ID that matches an entry in annotation/id node in the GDS file.</p>
-       <p>(2) Click \"Retrieve Data\" to retrieve the genotype data. Two [Success] messages will print out if both genotype and genotype data are uploaded successfully. </p>
+  title = "Genotype-Phenotype",
+  div(
+    class = "navbar_content",
+    titlePanel("Boxplot of a phenotype vs the genotype of a SNP"),
+    HTML("<p>(1) Upload genotype data GDS in RDS format and Phenotype data in RDS or CSV format. Type in a SNP ID that matches an entry in annotation/id node in the GDS file.</p>
+       <p>(2) Click \"Retrieve Data\" to retrieve the data. Two [Success] messages will print out if both genotype and phenotype data are uploaded successfully. </p>
        <p>(3) Select a phenotype in the new drop down menu. Click \"Plot Boxplot\" to draw a genotype-phenotype boxplot.</p>"),
-  fluidRow(column(12, paste(rep("-", 100), collapse = ""))),
-  fluidRow(
-    column(
-      4,
-      fileInput(inputId = "genotype_gds", label = "Genotype Data (GDS)", multiple = FALSE),
-      fileInput(inputId = "phenotype_rds", label = "Phenotype Data (RDS,CSV)", multiple = FALSE),
-      textInput(inputId = "genopheno_select_snp", label = "Input a SNP in snpID entry in GDS", value = "", placeholder = ""),
-      actionButton("genopheno_READ", label = "Retrieve Data"),
-      HTML("<p> </p><p> </p>"),
-      conditionalPanel(
-        condition = "output.genopheno_readpheno_text",
-        selectizeInput(inputId = "genopheno_select_phenotype", label = "Select phenotype", choices = NULL, selected = NULL, multiple = FALSE),
-        actionButton("genopheno_GO", label = "Plot Boxplot")
-      )
-    ),
-    column(
-      8,
-      htmlOutput("genopheno_readgeno_text"),
-      htmlOutput("genopheno_readpheno_text"),
-      htmlOutput("genopheno_plot_text"),
-      conditionalPanel(
-        condition = "output.genopheno_plot_text",
-        plotOutput("genopheno_boxplot")
+    fluidRow(column(12, paste(rep("-", 100), collapse = ""))),
+    fluidRow(
+      column(
+        4,
+        fileInput(inputId = "genotype_gds", label = "Genotype Data (GDS)", multiple = FALSE),
+        fileInput(inputId = "phenotype_rds", label = "Phenotype Data (RDS,CSV)", multiple = FALSE),
+        textInput(inputId = "genopheno_select_snp", label = "Input a SNP in 'annotation/id' entry in GDS", value = "", placeholder = ""),
+        actionButton("genopheno_READ", label = "Retrieve Data"),
+        HTML("<p><i>You need to retrieve data again after selecting another SNP. </i></p>"),
+        br(),
+        conditionalPanel(
+          condition = "output.genopheno_readpheno_text",
+          selectizeInput(inputId = "genopheno_select_phenotype", label = "Select phenotype", choices = NULL, selected = NULL, multiple = FALSE),
+          actionButton("genopheno_GO", label = "Plot Boxplot")
+        ),
+        br(), br()
+      ),
+      column(
+        8,
+        htmlOutput("genopheno_readgeno_text"),
+        htmlOutput("genopheno_readpheno_text"),
+        htmlOutput("genopheno_plot_text"),
+        conditionalPanel(
+          condition = "output.genopheno_plot_text",
+          plotOutput("genopheno_boxplot")
+        )
       )
     )
   )

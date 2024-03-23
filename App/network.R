@@ -1,24 +1,27 @@
 network_ui <- tabPanel(
-  "Network",
-  titlePanel("Network of SNPs vs Phenotypes"),
-  fluidRow(column(12, paste(rep("-", 100), collapse = ""))),
-  sliderInput(
-    inputId = "nw_pval_cutoff",
-    label = "significant p-value cutoff 1/10^?",
-    value = 7.5, min = 1, max = 30, step = 0.1
-  ),
-  numericInput(
-    inputId = "nw_mac_cutoff",
-    label = "MAC cutoff >= ?",
-    value = 3, min = 1, max = NA, step = 1
-  ),
-  actionButton("nw_anal_GO", label = "Plot Association"),
-  dq_space(),
-  htmlOutput("nw_anal_text"),
-  conditionalPanel(
-    condition = "output.nw_anal_text",
-    # downloadButton("nw_anal_plot_download", "Download plot"),
-    plotOutput("nw_anal_plot")
+  title = "Network",
+  div(
+    class = "navbar_content",
+    titlePanel("Network of SNPs vs Phenotypes"),
+    fluidRow(column(12, paste(rep("-", 100), collapse = ""))),
+    sliderInput(
+      inputId = "nw_pval_cutoff",
+      label = "significant p-value cutoff 1/10^?",
+      value = 7.5, min = 1, max = 30, step = 0.1
+    ),
+    numericInput(
+      inputId = "nw_mac_cutoff",
+      label = "MAC cutoff >= ?",
+      value = 3, min = 1, max = NA, step = 1
+    ),
+    actionButton("nw_anal_GO", label = "Plot Association"),
+    br(), br(),
+    htmlOutput("nw_anal_text"),
+    conditionalPanel(
+      condition = "output.nw_anal_text",
+      # downloadButton("nw_anal_plot_download", "Download plot"),
+      plotOutput("nw_anal_plot")
+    )
   )
 )
 
@@ -62,11 +65,11 @@ network_server <- function(input, output, session, QTLres_var) {
   })
 
   nw_anal_text_var <- eventReactive(input$nw_anal_GO, {
-    c("hi")
+    c("Finish plotting. The plot may take a few seconds to show. ")
   })
 
   output$nw_anal_text <- renderText({
-    c("hi")
+    nw_anal_text_var()
   })
 
   output$nw_anal_plot <- renderPlot(width = 800, height = 800, {

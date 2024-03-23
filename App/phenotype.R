@@ -1,41 +1,46 @@
 source("manhattan_plot.R")
 
 phenotype_ui <- tabPanel(
-  "Analyze Phenotype",
-  titlePanel("Manhattan & Miami Plot of a Phenotype"),
-  fluidRow(column(12, paste(rep("-", 100), collapse = ""))),
-  fluidRow(
-    column(
-      3,
-      selectizeInput(inputId = "pheno_select_phenotype", label = "Select phenotype", choices = NULL, multiple = FALSE),
-      textAreaInput(inputId = "pheno_select_snp", label = "Select a subset of SNPs in snpID column (seperate by ',') to color in the plots", value = "", placeholder = "", rows = 4),
-      sliderInput(
-        inputId = "pheno_pval_cutoff",
-        label = "p-value cutoff 1e-?",
-        value = 7.5, min = 1, max = 15, step = 0.1
+  title = "Manhattan & Miami",
+  div(
+    class = "navbar_content",
+    titlePanel("Manhattan & Miami Plot of a Phenotype"),
+    fluidRow(column(12, paste(rep("-", 100), collapse = ""))),
+    fluidRow(
+      column(
+        4,
+        HTML("<p><i>If no phenotype choices are available, go to the 'Preview' tab and come back again.</i></p>"),
+        selectizeInput(inputId = "pheno_select_phenotype", label = "Select phenotype", choices = NULL, multiple = FALSE),
+        textAreaInput(inputId = "pheno_select_snp", label = "Select a subset of SNPs in snpID column (seperate by ',') to color in the plots", value = "", placeholder = "", rows = 4),
+        sliderInput(
+          inputId = "pheno_pval_cutoff",
+          label = "p-value significance line 1e-?",
+          value = 7.5, min = 1, max = 15, step = 0.1
+        ),
+        numericInput(
+          inputId = "pheno_mac_cutoff",
+          label = "MAC cutoff >= ?",
+          value = 3, min = 1, max = NA, step = 1
+        ),
+        actionButton("pheno_GO", label = "Plot")
       ),
-      numericInput(
-        inputId = "pheno_mac_cutoff",
-        label = "MAC cutoff >= ?",
-        value = 3, min = 1, max = NA, step = 1
-      ),
-      actionButton("pheno_GO", label = "Plot")
-    ),
-    column(
-      9,
-      htmlOutput("pheno_anal_text"),
-      conditionalPanel(
-        condition = "output.pheno_anal_text",
-        HTML("<p><b>Manhattan plot</b>:</p> "),
-        plotOutput("pheno_anal_mhtplot"),
-        HTML("<p><b>Miami plot</b>: (note: you will receive error if all SNPs are in the same direction)</p>"),
-        plotOutput("pheno_anal_miamiplot"),
-        HTML("<p><b>Top SNPs: </b></p>"),
-        reactableOutput("pheno_anal_res_df")
+      column(
+        8,
+        htmlOutput("pheno_anal_text"),
+        conditionalPanel(
+          condition = "output.pheno_anal_text",
+          HTML("<p><b>Manhattan plot</b>:</p> "),
+          plotOutput("pheno_anal_mhtplot"),
+          HTML("<p><b>Miami plot</b>: (note: you will receive error if all SNPs are in the same direction)</p>"),
+          plotOutput("pheno_anal_miamiplot"),
+          HTML("<p><b>Top SNPs: </b></p>"),
+          reactableOutput("pheno_anal_res_df")
+        )
       )
     )
   )
 )
+
 
 phenotype_server <- function(input, output, session, QTLres_var) {
   pheno_anal_text_var <- eventReactive(input$pheno_GO, {

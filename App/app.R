@@ -1,5 +1,4 @@
 library(shiny)
-library(dqshiny)
 library(reactable)
 library(igraph)
 library(SeqArray)
@@ -9,18 +8,26 @@ library(ggplot2)
 options(shiny.maxRequestSize = 30 * 1024^2)
 source("table_preview.R", local = TRUE)
 source("phenotype.R", local = TRUE)
-source("network.R", local = TRUE)
 source("genopheno.R", local = TRUE)
+source("network.R", local = TRUE)
 
 ui <- fluidPage(
-  titlePanel("QTL Visualization"),
-  fileInput(
-    inputId = "QTLres", label = "Choose QTL Result",
-    multiple = FALSE
+  tagList(
+    tags$head(
+      tags$link(type = "text/css", rel = "stylesheet", href = "styling.css")
+    )
+  ),
+  div(titlePanel("QTL Visualization"),
+    fileInput(
+      inputId = "QTLres", label = "Choose QTL Result",
+      multiple = FALSE
+    ),
+    id = "title_section"
   ),
   HTML("<p>The input needs to be a dataframe with columns: chr, pos, snpID or variant.id, phenotype, pvalue or Score.pval, beta or Est, mac or MAC.</p>"),
-  tabsetPanel(
-    type = "tabs",
+  navbarPage(
+    title = "Visualization",
+    position = "fixed-top",
     table_preview_ui,
     phenotype_ui,
     genopheno_ui,
@@ -35,6 +42,8 @@ server <- function(input, output, session) {
     res <- readRDS(input$QTLres$datapath)
     if ("Score.pval" %in% colnames(res)) res <- res %>% rename(pvalue = Score.pval)
     if ("Est" %in% colnames(res)) res <- res %>% rename(beta = Est)
+    if ("Est.ca" %in% colnames(res)) res <- res %>% rename(beta = Est.ca)
+    if ("beta.ca" %in% colnames(res)) res <- res %>% rename(beta = beta.ca)
     if ("mac" %in% colnames(res) & !"MAC" %in% colnames(res)) res <- res %>% rename(MAC = mac)
     if (!"snpID" %in% colnames(res)) res$snpID <- paste0("snp", res$variant.id)
     res$snpID[which(is.na(res$snpID))] <- paste0("snp", res$variant.id[which(is.na(res$snpID))])

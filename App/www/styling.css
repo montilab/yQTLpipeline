@@ -1,0 +1,28 @@
+/* use # for id */
+#title_section{
+    color:#110044;
+    position:fixed;
+    background:white;
+    z-index: 10; 
+    width: 100%;
+    }
+
+/* use . for class */
+.navbar, .navbar-default, .navbar-fixed-top {
+  height: 50px;
+  top: 150px;
+  z-index: 11;
+}
+
+.navbar_content{
+    position:relative;
+    z-index: 1;
+    top: 160px;
+    padding-bottom: 50px;
+}
+
+.side_bar{
+    position:fixed;
+    z-index: 9;
+    padding-top: 50px;
+}
