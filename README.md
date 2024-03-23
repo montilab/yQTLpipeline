@@ -234,12 +234,12 @@ The processes included in each one of the nf script:
 1. `QTL_results_wrap`  For each of the phenotype, merge the QTL results from `QTL_count_wrap` in `Analysis.nf`, and draw phenotype histogram plot, QQ plot, Manhattan plot and Miami plot.  
 
 
-## 7. Shiny App Usage
+## 7\. Shiny App Usage
 We developed an R Shiny App available in the App folder to facilitate downstream visualization.  
 Open app.R using R studio, and click the `Run App` button at the top right.  
 
 ### 7\.1 Upload QTL analysis result as an RDS file 
-![image](files:vignette/figs/pic1_preview.png)  
+![image](files:./vignette/figs/pic1_preview.png)  
 The uploaded QTL result is a data frame including the following columns:  
 - chr  
 - pos  
@@ -253,23 +253,23 @@ An example is provided as `N2-acetyl,N6-methyllysine_Example.rds`.
 
 ### 7\.2 Manhattan and Miami plots 
 Select a phenotype in the dropdown menu, specify the significance p-value threshold, and provide a list of SNP to highlight in the plots (optional).  
-![image](files:vignette/figs/pic2_mht.png)  
-![image](files:vignette/figs/pic3_miami.png)  
+![image](files:./vignette/figs/pic2_mht.png)  
+![image](files:./vignette/figs/pic3_miami.png)  
 
 ### 7\.3 Genotype-Phenotype boxplot 
 First, upload a GDS file, and a phenotype file in RDS or CSV format. Specify a variant from the "annotation/id" entry in the GDS file. Click "Retrieve Data". If successful, a new drop-down menu and plotting button will appear.  
 For example, you can use 'data/gds/chr_1.gds' for the GDS file and 'data/pheno_file.csv' for the phenotype file. Select variant '1:1000156'.  
 Second, select a phenotype from the new drop-down menu and click "Plot Boxplot".  
-![image](files:vignette/figs/pic6_box3.png)  
+![image](files:./vignette/figs/pic6_box3.png)  
 
 ### 7\.4 Network of variants and phenotypes 
 QTL results consist of multiple phenotypes and variants. Therefore, we offer an option to visualize the associations as a network. For example, upload `Network_Example.rds` to the "Choose QTL result" file input at the top.  
 Next, select a p-value threshold and MAC (minor allele count) threshold, and plot the network.  
 
-![image](files:vignette/figs/pic7_nw1.png)  
+![image](files:./vignette/figs/pic7_nw1.png)  
 
 Since genetic variants are oftentimes in high linkage disequilibrium (LD) with each other, only the top variant in each chromosome will be included.  
-![image](files:vignette/figs/pic7_nw2.png)  
+![image](files:./vignette/figs/pic7_nw2.png)  
 
 
 -end-
