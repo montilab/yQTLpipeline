@@ -21,6 +21,7 @@ We developed the _yQTL Pipeline_ – with ‘y’ indicating the dependent quant
 - [4.Input File Examples](https://github.com/montilab/yQTL-Pipeline#4-input-file-examples)  
 - [5.Output Descriptions](https://github.com/montilab/yQTL-Pipeline#5-output-descriptions)  
 - [6.Workflow Process Details](https://github.com/montilab/yQTL-Pipeline#6-workflow-process-details)  
+- **[7.Shiny App](https://github.com/montilab/yQTL-Pipeline#7-Shiny-App-Usage)**  
 
 
 ## 1\. Setup 
@@ -113,7 +114,7 @@ This will write out the files `ExampleConfig_G.config` and `Example_G.sh`, as we
 ### 3\.1 Mandatory inputs
 - `params.outdir`  Directory to save the results.  
 - `params.pipeline_engine`  When individual relatedness is present and a genetic relationship matrix (GRM) is needed, use "genesis" or "g" to run GENESIS. Linear mixed-effect models will be used. When individual relatedness is not present and all samples are independent, use "matrixeqtl" or "m" to run MatrixeQTL. All processes will start with either "G_" or "M_" indicating which engine has been selected.  
-- `params.model_type`  When using MatrixeQTL, specify as one of the following: "linear" to run an additive linear model, "category" to treat genotype as categories and apply an ANOVA test, or "interaction" to test the interaction between SNP and the covariate specified in `params.interaction_cvrt`. Note that this covariate can only be continuous (numeric) variable.  
+- `params.model_type`  Mandatory when running MatrixeQTL. Specify as one of the following: "linear" to run an additive linear model, "category" to treat genotype as categories and apply an ANOVA test, or "interaction" to test the interaction between SNP and the covariate specified in `params.interaction_cvrt`.  When running MatrixeQTL with model_type = "interaction", specify a covariate to test its interaction with the SNPs.  
 - `params.genodat_format`  Either "vcf" or "gds".  
 - `params.vcf_list` and `params.gds_list`  The path to the CSV file that points to the location of the VCF or GDS files, which contains two columns without header. The first column is the user-defined names for each of the genotype files, and the second column is the file paths. When the inputs are VCF files, must also setup `params.gds_list = "${params.outdir}/1_data/gds_list.csv"`.  
 - `params.genotype_or_dosage`  Use "genotype" or "GT" to use the "GT" entry in the VCF or GDS files. Alternatively, use "dosage" or "DS" to use the "DS" entry.  
@@ -145,13 +146,21 @@ When `params.start_PC = true`, setup the following:
 
 **Plotting Parameters**  
 These parameters only control the plots and will not filter the QTL results in RDS or CSV.  
+- `params.draw_genopheno_boxplot`  Input "true" to generate genotype-phenotype boxplots of the most significant variant in each genotype file, if it passes the p-value threshold below.  
+- `params.boxplot_p_cutoff`  The p-value threshold to determine if the top SNP is significant.  
 - `params.plot_mac`  Numeric value. The minimum minor allele count (MAC) for a SNP to be included in the QQ plot, Manhattan plot and Miami plot to avoid artefects caused by too little observation. Commonly used values for rare SNPs is 3 or 5, while 20 for common SNPs.  
 - `params.plot_resolution`  Numeric value. The resolution dpi to save the plots. Commonly used values including 72, 100, and 120.  
 - `params.plot_size`  Numeric value. Control the size of the plots in pixels. Commonly used values including 400 and 600.  
 
+**PreQC**
+We have a supporting script PreQC.nf that can perform quality filter on the input VCF.  
+- `params.hwe_p`  The Hardy-Weinberg Equilibrium p-value. Variants with a p-value below this threshold will be considered to violate HWE and will be removed. Input 1 to avoid filtering out any variants.  
+- `params.min_mac`  Numeric. Only variants with minor allele count equal or higher than this threshold will be kept.  
+- `params.max_missing_allowed`  Numeric, ranges from 0 to 1. The maximum missing rate acceptable. For example, input 0.1 will remove variants with missingness greater than 10%.  
+
 
 ## 4\. Input File Examples 
-*Note: All TXT and CSV files must have a complete final line, i.e., an empty line at the end of the file when opened in a text editor. Otherwise, the computer can not process the text file.*
+*Note: All TXT and CSV files must have a complete final line. i.e. You can see an empty line at the end of the file when opened in a text editor.*
 
 CSV file to specify genotype file paths (without header):  
 |        |                                   |
@@ -201,7 +210,7 @@ All logs for each of the analyses steps will be saved in each of the subfolders.
 *proceed with caution*: Nextflow would save all the intermediate results in the work/ directory. When the pipeline successfully finishes, it's recommended to discard the `work/` directory.  
 *proceed with caution*: QTL results can be very large. When the user is sure about the results of the association of all SNPs and all phenotypes are saved in < 5_Results_Summary >, results in < 2_SNP_info >, < 3_individual_results > and < 4_individual_results_SNPinfo > can be discarded, since < 5_Results_Summary > is the merged version of them. However, it's highly recommended to save a copy of the null-models of each of the phenotype (`3_individual_results/nullmod_[phenotype]_[gds].rds`).  
 
-## 6. Workflow Process Details
+## 6\. Workflow Process Details
 The processes included in each one of the nf script:  
 
 **Prepare.nf**  
@@ -223,6 +232,44 @@ The processes included in each one of the nf script:
 
 **Report.nf**  
 1. `QTL_results_wrap`  For each of the phenotype, merge the QTL results from `QTL_count_wrap` in `Analysis.nf`, and draw phenotype histogram plot, QQ plot, Manhattan plot and Miami plot.  
+
+
+## 7. Shiny App Usage
+We developed an R Shiny App available in the App folder to facilitate downstream visualization.  
+Open app.R using R studio, and click the `Run App` button at the top right.  
+
+### 7\.1 Upload QTL analysis result as an RDS file 
+![image](files:vignette/figs/pic1_preview.png)  
+The uploaded QTL result is a data frame including the following columns:  
+- chr  
+- pos  
+- snpID  
+- phenotype  
+- pvalue / Score.pval  
+- beta / beta.ca / Est / Est.ca
+- mac / MAC  
+
+An example is provided as `N2-acetyl,N6-methyllysine_Example.rds`.  
+
+### 7\.2 Manhattan and Miami plots 
+Select a phenotype in the dropdown menu, specify the significance p-value threshold, and provide a list of SNP to highlight in the plots (optional).  
+![image](files:vignette/figs/pic2_mht.png)  
+![image](files:vignette/figs/pic3_miami.png)  
+
+### 7\.3 Genotype-Phenotype boxplot 
+First, upload a GDS file, and a phenotype file in RDS or CSV format. Specify a variant from the "annotation/id" entry in the GDS file. Click "Retrieve Data". If successful, a new drop-down menu and plotting button will appear.  
+For example, you can use 'data/gds/chr_1.gds' for the GDS file and 'data/pheno_file.csv' for the phenotype file. Select variant '1:1000156'.  
+Second, select a phenotype from the new drop-down menu and click "Plot Boxplot".  
+![image](files:vignette/figs/pic6_box3.png)  
+
+### 7\.4 Network of variants and phenotypes 
+QTL results consist of multiple phenotypes and variants. Therefore, we offer an option to visualize the associations as a network. For example, upload `Network_Example.rds` to the "Choose QTL result" file input at the top.  
+Next, select a p-value threshold and MAC (minor allele count) threshold, and plot the network.  
+
+![image](files:vignette/figs/pic7_nw1.png)  
+
+Since genetic variants are oftentimes in high linkage disequilibrium (LD) with each other, only the top variant in each chromosome will be included.  
+![image](files:vignette/figs/pic7_nw2.png)  
 
 
 -end-
