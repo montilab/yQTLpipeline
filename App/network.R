@@ -61,27 +61,39 @@ network_server <- function(input, output, session, QTLres_var) {
     pheno_length <- length(unique(res$phenotype))
     chr_length <- length(unique(res$chr))
     vertex_attr(g_wchr, name = "color") <- c(rep("lightsteelblue1", SNP_length), rep("mistyrose", pheno_length), rep("darkseagreen1", chr_length))
-    return(plot(g_wchr, vertex.label.cex = 1.3, vertex.size = 8, vertex.label.family = "Roboto", vertex.label.color = "grey20"))
-  })
 
-  nw_anal_text_var <- eventReactive(input$nw_anal_GO, {
-    c("Finish plotting. The plot may take a few seconds to show. ")
+    ## saving igraph plot in a variable does not work. use recordPlot().
+    ## plot it in R device
+    plot(g_wchr, vertex.label.cex = 1.3, vertex.size = 8, vertex.label.family = "Roboto", vertex.label.color = "grey20")
+    ## record current plot
+    nw_plot <- recordPlot()
+    ## clean up R plot device
+    plot.new()
+
+    return(list(
+      "message" = "[Success]",
+      "plot" = nw_plot
+    ))
   })
 
   output$nw_anal_text <- renderText({
-    nw_anal_text_var()
+    nw_anal_plot_var()$message
   })
 
-  output$nw_anal_plot <- renderPlot(width = 800, height = 800, {
-    nw_anal_plot_var()
-  })
-
-  output$nw_anal_plot_download <- downloadHandler(
-    filename = paste0("plot.png"),
-    content = function(file) {
-      png(file)
-      nw_anal_plot_var()
-      dev.off()
-    }
+  output$nw_anal_plot <- renderPlot(
+    {
+      nw_anal_plot_var()$plot
+    },
+    width = 800,
+    height = 800
   )
+
+  # output$nw_anal_plot_download <- downloadHandler(
+  #   filename = paste0("plot.png"),
+  #   content = function(file) {
+  #     png(file)
+  #     nw_anal_plot_var()$plot
+  #     dev.off()
+  #   }
+  # )
 }
