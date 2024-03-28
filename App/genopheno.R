@@ -3,16 +3,17 @@ genopheno_ui <- tabPanel(
   div(
     class = "navbar_content",
     titlePanel("Boxplot of a phenotype vs the genotype of a SNP"),
-    HTML("<p>(1) Upload genotype data GDS in RDS format and Phenotype data in RDS or CSV format. Type in a SNP ID that matches an entry in annotation/id node in the GDS file.</p>
-       <p>(2) Click \"Retrieve Data\" to retrieve the data. Two [Success] messages will print out if both genotype and phenotype data are uploaded successfully. </p>
-       <p>(3) Select a phenotype in the new drop down menu. Click \"Plot Boxplot\" to draw a genotype-phenotype boxplot.</p>"),
+    HTML("<p>(1) Upload the phenotype data in RDS or CSV format. </p>
+       <p>(2) Upload genotype data GDS format. Upon successful uploading, a searchable table will appear.
+       <p>(3) Type in a SNP from the \"snpID\" column, then click \"Retrieve Data\". Two [Success] messages will print out. </p>
+       <p>(4) Select a phenotype in the new drop down menu, and click \"Plot Boxplot\" to draw a genotype-phenotype boxplot.</p>"),
     fluidRow(column(12, paste(rep("-", 100), collapse = ""))),
     fluidRow(
       column(
         4,
-        fileInput(inputId = "genotype_gds", label = "Genotype Data (GDS)", multiple = FALSE),
         fileInput(inputId = "phenotype_rds", label = "Phenotype Data (RDS,CSV)", multiple = FALSE),
-        textInput(inputId = "genopheno_select_snp", label = "Input a SNP in 'annotation/id' entry in GDS", value = "", placeholder = ""),
+        fileInput(inputId = "genotype_gds", label = "Genotype Data (GDS)", multiple = FALSE),
+        textInput(inputId = "genopheno_select_snp", label = "Input a SNP in 'snpID'", value = "", placeholder = ""),
         actionButton("genopheno_READ", label = "Retrieve Data"),
         HTML("<p><i>You need to retrieve data again after selecting another SNP. </i></p>"),
         br(),
@@ -25,6 +26,7 @@ genopheno_ui <- tabPanel(
       ),
       column(
         8,
+        reactableOutput("genopheno_gds_snp_preview"),
         htmlOutput("genopheno_readgeno_text"),
         htmlOutput("genopheno_readpheno_text"),
         htmlOutput("genopheno_plot_text"),
@@ -38,6 +40,34 @@ genopheno_ui <- tabPanel(
 )
 
 genopheno_server <- function(input, output, session) {
+  output$genopheno_gds_snp_preview <- renderReactable({
+    req(input$genotype_gds$datapath)
+
+    gds <- try(seqOpen(input$genotype_gds$datapath), silent = T)
+    if (class(gds) == "try-error") {
+      stop("Input genotype file is not a valid GDS file. ")
+    }
+
+    ## obtain SNP information
+    SNP_info <- try(data.frame(
+      "snpID" = seqGetData(gds, "annotation/id"),
+      "chr" = seqGetData(gds, "chromosome"),
+      "pos" = seqGetData(gds, "position"),
+      # "allele" = seqGetData(gds, "allele"),
+      "REF" = seqGetData(gds, "$ref"),
+      "ALT" = seqGetData(gds, "$alt")
+    ), silent = T)
+
+    if (class(SNP_info) == "try-error") {
+      stop("Input genotype file does not contain at least one of the following node: chromosome, position, annotation/id, $ref, $alt.")
+    }
+
+    seqClose(gds)
+
+    return(reactable(SNP_info, searchable = TRUE, defaultPageSize = 5))
+  })
+
+
   genopheno_genodat_var <- eventReactive(input$genopheno_READ, {
     gds <- seqOpen(input$genotype_gds$datapath)
 
@@ -53,7 +83,7 @@ genopheno_server <- function(input, output, session) {
 
     if (!input$genopheno_select_snp %in% SNP_info$snpID) {
       seqClose(gds)
-      stop("Error: Input SNP is not available in the uploaded GDS. Please retry. ")
+      stop("Input SNP ID is not available in the input GDS file. Please double check. ")
     }
 
     SNP_info <- SNP_info %>% filter(snpID == input$genopheno_select_snp)
@@ -78,7 +108,10 @@ genopheno_server <- function(input, output, session) {
 
     snp_name <- paste0(SNP_info$snpID, ", ", SNP_info$chr, "_", SNP_info$pos, "_", SNP_info$REF, "_", SNP_info$ALT)
     return(list(
-      "message" = paste0("[Success] Genotype data retrieving success. Selected SNP:", snp_name, "."),
+      "message" = paste0(
+        "<p><font color=\"lightseagreen\">[Success]</font> Genotype data retrieving success. </p>",
+        "<p>Selected SNP:<font color=\"slateblue\">", snp_name, "</font>.</p>"
+      ),
       "geno_dat" = geno_dat_formated,
       "snp_name" = snp_name
     ))
@@ -90,10 +123,10 @@ genopheno_server <- function(input, output, session) {
     } else if (any(endsWith(input$phenotype_rds$datapath, c(".csv", ".CSV")))) {
       pheno_dat <- read.csv(input$phenotype_rds$datapath)
     } else {
-      stop("Error: Input phenotype data must be in RDS or CSV format.")
+      stop("Input phenotype data must be in RDS or CSV format.")
     }
     if (!"sample.id" %in% colnames(pheno_dat)) {
-      stop("Error: Input phenotype data must have a column \"sample.id\".")
+      stop("Input phenotype data must have a column \"sample.id\".")
     }
 
     updateSelectizeInput(
@@ -103,7 +136,7 @@ genopheno_server <- function(input, output, session) {
     )
 
     return(list(
-      "message" = "[Success] Phenotype data retrieving success.",
+      "message" = "<font color=\"lightseagreen\">[Success]</font> Phenotype data retrieving success.",
       "pheno_dat" = pheno_dat
     ))
   })
@@ -137,7 +170,7 @@ genopheno_server <- function(input, output, session) {
       ggtitle(paste(input$genopheno_select_phenotype, "x", genopheno_genodat_var()$snp_name))
 
     return(list(
-      "message" = "Finish plotting.",
+      "message" = "<font color=\"lightseagreen\">[Success]</font> Finish plotting.",
       "plot" = plot
     ))
   })
