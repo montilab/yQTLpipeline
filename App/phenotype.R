@@ -29,9 +29,9 @@ phenotype_ui <- tabPanel(
         htmlOutput("pheno_anal_text"),
         conditionalPanel(
           condition = "output.pheno_anal_text",
-          HTML("<p><b>Manhattan plot</b>:</p> "),
+          HTML("<p><b><font color=\"slateblue\">Manhattan plot</b>:</font></p> "),
           plotOutput("pheno_anal_mhtplot"),
-          HTML("<p><b>Miami plot</b>: (note: you will receive error if all SNPs are in the same direction)</p>"),
+          HTML("<p><b><font color=\"slateblue\">Miami plot</b>:</font> (note: you will receive error if all SNPs are in the same direction)</p>"),
           plotOutput("pheno_anal_miamiplot"),
           HTML("<p><b>Top SNPs: </b></p>"),
           reactableOutput("pheno_anal_res_df")
@@ -66,12 +66,14 @@ phenotype_server <- function(input, output, session, QTLres_var) {
   output$pheno_anal_text <- renderText({
     if (pheno_anal_text_var()$nrow_res == 0) {
       return(c(
-        "<p>Analyze phenotype: ", pheno_anal_text_var()$pheno_select_phenotype, "</p>",
+        "<p><font color=\"lightseagreen\">[Success]</font> Finish plotting.</p>",
+        "<p>Selected phenotype: <font color=\"slateblue\">", pheno_anal_text_var()$pheno_select_phenotype, "</font></p>",
         "<p>No QTL found exceeding the specified p-value cutoff.</p>"
       ))
     } else {
       return(c(
-        "<p>Analyze phenotype: ", pheno_anal_text_var()$pheno_select_phenotype, "</p>",
+        "<p><font color=\"lightseagreen\">[Success]</font> Finish plotting.</p>",
+        "<p>Selected phenotype: <font color=\"slateblue\">", pheno_anal_text_var()$pheno_select_phenotype, "</font></p>",
         "<p>Total number of QTLs exceed specified p-value cutoff:", pheno_anal_text_var()$QTL_num, "</p>",
         "<p>Top QTL: ", pheno_anal_text_var()$top_QTL, " , on chromosome ", pheno_anal_text_var()$top_QTL_chr, " pos ", pheno_anal_text_var()$top_QTL_pos, "</p>"
       ))
