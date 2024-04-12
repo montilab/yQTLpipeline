@@ -7,6 +7,8 @@
 ![Compatibility](https://img.shields.io/badge/Compatibility-Linux%20%2F%20OSX-orange.svg) 
 ![Dependencies](https://img.shields.io/badge/dependencies-up%20to%20date-brightgreen.svg) 
 [![GitHub Issues](https://img.shields.io/github/issues/montilab/yQTL-Pipeline.svg)](https://github.com/montilab/yQTL-Pipeline/issues)
+[![DOI:](https://zenodo.org/badge/DOI/10.5281/zenodo.10965871.svg)](https://zenodo.org/account/settings/github/repository/montilab/yQTLpipeline)
+
 
 # Overview
 
