@@ -61,34 +61,35 @@ $ curl -s https://get.nextflow.io | bash
 Sometimes, Nextflow may already be installed as a module on your machine. Use `module avail nextflow` to check. If so, you do not need to download the Nextflow executable.  
 
 ## 2\. Run the *yQTL Pipeline*  
-Specify input file paths and parameters in `Config.config`. See the following [3.Input Files and Parameters](https://github.com/montilab/yQTL-Pipeline#3-input-files-and-parameters) for details.  
+Create a `Config.config` and specify input file paths and parameters. See the following [3.Input Files and Parameters](https://github.com/montilab/yQTL-Pipeline#3-input-files-and-parameters) for details.  
 
-When running on local ($NF is the /path/to/download/nextflow/ above):  
+When running on local:  
 ``` bash
-$ cd /path/to/yQTLpipeline/folder
+$ cd /path/to/work/directory 
 $ module load R/4.1.2 
-$ $NF/nextflow -c Config.config run Prepare.nf 
-$ $NF/nextflow -c Config.config run Analysis.nf 
-$ $NF/nextflow -c Config.config run Report.nf 
+$ $NF/nextflow -c Config.config run $PIPLINE/Prepare.nf 
+$ $NF/nextflow -c Config.config run $PIPLINE/Analysis.nf 
+$ $NF/nextflow -c Config.config run $PIPLINE/Report.nf 
 ```
+$NF is the directory where the Nextflow executable is located, and $PIPLINE is the directory where the *yQTL Pipeline* is installed.  
 
 When running on a shared computer cluster:  
 1. Set up the bash job parameters in `configs/sge.config`.  
 2. Modify the 1st line of `Config.config` to use sge.config: `includeConfig 'configs/sge.config'`.  
 3. Submit the code above as a bash job.  
 
-Alternatively, when Nextflow is already installed as a module, use the following:  
+When Nextflow is already installed as a module, an executable is not required. For example:  
 
 ``` bash
-$ cd /path/to/the/yQTLpipeline
+$ cd /path/to/work/directory 
 $ module load R/4.1.2 
 $ module load nextflow 
-$ nextflow -c Config.config run Prepare.nf 
-$ nextflow -c Config.config run Analysis.nf 
-$ nextflow -c Config.config run Report.nf 
+$ nextflow -c Config.config run $PIPLINE/Prepare.nf 
+$ nextflow -c Config.config run $PIPLINE/Analysis.nf 
+$ nextflow -c Config.config run $PIPLINE/Report.nf 
 ```
 
-### Run Examples  
+### Examples  
 
 #### Example 1  
 Starting from a VCF file input, calculating PCs, and using MatrixeQTL to obtain QTL results.  
