@@ -45,15 +45,16 @@ BiocManager::install("GENESIS")
 
 ### 1\.2 Decide which Nextflow (nf) scripts to use 
 The whole pipeline is divided into three nf scripts: `Prepare.nf`, `Analysis.nf` and `Report.nf`.  
-1. When the genotype data is in GDS format and genetic PCs (and genetic relationship matrix (GRM), when individual relatedness is present) is available, only `Analysis.nf` and `Report.nf` are needed.  
-2. When the genotype data is in VCF format, and/or genetic PCs and GRM are needed, must be run `Prepare.nf` before launching `Analysis.nf` and `Report.nf`.  
+1. When the genotype data is in GDS format and genetic PCs (and genetic relationship matrix (GRM), when individual relatedness is present) are available, only `Analysis.nf` and `Report.nf` are needed.  
+2. When the genotype data is in VCF format, and/or genetic PCs and GRM are needed, `Prepare.nf` must be run before running `Analysis.nf` and `Report.nf`.  
 
-See below in [6.Workflow Process Details](https://github.com/montilab/yQTL-Pipeline#6-workflow-process-details) for detailed descriptions of the processes included in each of the nf scripts.  
+See below in [6.Workflow Process Details](https://github.com/montilab/yQTL-Pipeline#6-workflow-process-details) for detailed description of the processes included in each of the nf scripts.  
 
 ### 1\.3 Download the Nextflow executable
 Nextflow requires a POSIX compatible system (Linux, OS X, etc.) and Java 8 (recommended Java 11 or later, up to 18) to be installed. Use the following command to download the executable. Once downloaded, optionally, you may make the nextflow file accessible by your $PATH variable so you do not need to specify the full path to nextflow each time.  
 
 ``` bash
+$ cd /path/to/download/folder/
 $ curl -s https://get.nextflow.io | bash
 ```
 
@@ -62,7 +63,7 @@ Sometimes Nextflow may be already installed as a module on your machine. Use `mo
 ## 2\. Run the *yQTL Pipeline*  
 Specify input file paths and parameters in `Config.config`. See the following [3.Input Files and Parameters](https://github.com/montilab/yQTL-Pipeline#3-input-files-and-parameters) for details.  
 
-When running on local:  
+When running on local (assuming $NF is the path to the executable):  
 ``` bash
 $ module load R/4.1.2 
 $ ./nextflow -c Config.config run Prepare.nf 
