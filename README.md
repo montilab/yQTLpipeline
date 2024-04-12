@@ -94,19 +94,19 @@ $ nextflow -c Config.config run $PIPLINE/Report.nf
 #### Example 1  
 Starting from a VCF file input, calculating PCs, and using MatrixeQTL to obtain QTL results.  
 
-1. Navigate to the directory <example/>.  
+1. Navigate to the directory < example >.  
 `cd /path/to/the/yQTLpipeline/example`  
-2. Launch R and run `Rscript GenerateExample_M.R.` This will write out the files `ExampleConfig_M.config` and `Example_M.sh`, as well as update the <data/> directory to set up the input file paths.  
+2. Launch R and run `Rscript GenerateExample_M.R.` This will write out the files `ExampleConfig_M.config` and `Example_M.sh`, as well as update the < data > directory to set up the input file paths.  
 3. Run `bash Example_M.sh`.  
 4. Example results will be generated in the folder < ExampleResults_M >.  
 
 #### Example 2  
 Starting from a GDS file, pre-defined PCs, and GRM, using GENESIS to obtain QTL results.  
 
-1. Navigate to the directory <example/>.  
+1. Navigate to the directory < example >.  
 `cd /path/to/the/yQTLpipeline/example`  
 2. Launch R and run `Rscript GenerateExample_G.R`.  
-This will write out the files `ExampleConfig_G.config` and `Example_G.sh`, as well as update the <data/> directory to set up the input file paths.  
+This will write out the files `ExampleConfig_G.config` and `Example_G.sh`, as well as update the < data > directory to set up the input file paths.  
 3. Run `bash Example_G.sh`.  
 4. Example results will be generated in the folder < ExampleResults_G >.  
 
@@ -249,7 +249,7 @@ The uploaded QTL result is a data frame that includes the following columns:
 - beta / beta.ca / Est / Est.ca
 - mac / MAC  
 
-An example is provided as `N2-acetyl,N6-methyllysine_Example.rds`.  
+An example is provided as `N2-acetyl,N6-methyllysine_Example.rds` in the < example > folder.  
 
 ### 7\.2 Manhattan and Miami plots 
 Select a phenotype from the dropdown menu, specify the significance p-value threshold, and optionally provide a list of SNPs to highlight in the plots.  
@@ -263,7 +263,7 @@ Second, select a phenotype from the new dropdown menu and click "Plot Boxplot".
 ![image](./vignette/figs/pic6_box3.png)  
 
 ### 7\.4 Network of variants and phenotypes 
-QTL results consist of multiple phenotypes and variants. Therefore, we offer an option to visualize the associations as a network. For example, upload `Network_Example.rds` to the "Choose QTL result" file input at the top.  
+QTL results consist of multiple phenotypes and variants. Therefore, we offer an option to visualize the associations as a network. For example, upload the `Network_Example.rds` provided in the < example > folder to the "Choose QTL result" file input at the top.  
 Next, select a p-value threshold and MAC (minor allele count) threshold, and plot the network.  
 Since genetic variants are often in high linkage disequilibrium (LD) with each other, only the top variant in each chromosome will be included.  
 
