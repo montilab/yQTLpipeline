@@ -16,6 +16,9 @@ args <- commandArgs(trailingOnly = TRUE)
 sink("1_covariates.log", append = FALSE, split = TRUE)
 date()
 
+cvrt_file <- "NA"
+input_covariates <- "NA"
+factor_covariates <- character(0)
 if (args[1] != "NA" && args[3] != "NA") {
   cvrt_file <- args[1]
   input_covariates <- unlist(strsplit(as.character(args[3]), ",", fixed = TRUE))
@@ -28,7 +31,7 @@ shared_sampleid <- as.character(readLines(args[5]))
 
 ## read cvrtdat
 cvrtdat <- NULL
-if (cvrt_file != "NA" && input_covariates != "NA") {
+if (cvrt_file != "NA" && input_covariates[1] != "NA") {
   if (endsWith(tolower(cvrt_file), ".txt")) {
     cvrtdat <- read.table(cvrt_file, sep = "\t", header = TRUE)
   } else if (endsWith(tolower(cvrt_file), ".csv")) {
@@ -76,36 +79,12 @@ if (length(factor_covariates) >= 1) {
   for (factor_name0 in factor_covariates) {
     cat(paste("-- Start processing", factor_name0, "...\n"))
     f_data0 <- cvrtdat[, factor_name0]
-
-    ## remove NA or empty entries to get the correct level of the factor
-    f_data0 <- f_data0[which(!is.na(f_data0))]
-    f_data0 <- f_data0[which(f_data0 != "")]
-    f_data0 <- f_data0[which(f_data0 != "NA")]
-    all_levels0 <- levels(as.factor(f_data0))
-
-    ## only 1 level, error
-    if (length(all_levels0) < 2) {
-      stop(paste0("Only one level found for factor covariate: ", factor_name0, ". Please check your input. "))
-
-      ## only 2 levels, do not split, convert to 0 and 1
-    } else if (length(all_levels0) == 2) {
+    all_levels0 <- as.character(unique(f_data0))
+    if (length(all_levels0) > 2) {
       cat(paste(
-        "  ", factor_name0, "only has 2 levels:", paste(all_levels0, collapse = " "), "\n",
-        "  Convert to 0 and 1 respectively. \n"
-      ))
-      ## fill it as NA if it was NA originally
-      cvrtdat[, factor_name0] <- ifelse(cvrtdat[, factor_name0] %in% c(NA, "NA", ""), yes = NA, no = cvrtdat[, factor_name0])
-
-      ## fill it with 0 and 1
-      ## if something is NA, ifelse will not process it as "no" but will remain NA
-      cvrtdat[, factor_name0] <- ifelse(cvrtdat[, factor_name0] == all_levels0[1], yes = 0, no = 1)
-
-      ## only 3 or more levels, split them into multiple columns
-    } else if (length(all_levels0) > 2) {
-      cat(paste(
-        "  ", factor_name0, "has", length(all_levels0), "levels. Including:\n  ",
+        "  ", factor_name0, "has", length(all_levels0), "levels. Including:\n ",
         paste(all_levels0, collapse = ", "),
-        "\n   Set", all_levels0[1], "as the baseline.\n"
+        "\n    Set", all_levels0[1], "as the baseline.\n"
       ))
       f_data_mat0 <- matrix(
         nrow = nrow(cvrtdat),
@@ -113,17 +92,16 @@ if (length(factor_covariates) >= 1) {
         dimnames = list(cvrtdat$sample.id, paste(factor_name0, all_levels0[2:length(all_levels0)], sep = "_"))
       )
       for (l in all_levels0[2:length(all_levels0)]) {
-        ## fill it as NA if it was NA originally
-        f_data_mat0[, paste(factor_name0, l, sep = "_")] <- ifelse(cvrtdat[, factor_name0] %in% c(NA, "NA", ""), yes = NA, no = cvrtdat[, factor_name0])
-
-        ## fill it with 1 if it is the current factor level we are working on
-        ## if something is NA, ifelse will not process it as "no" but will remain NA
-        f_data_mat0[, paste(factor_name0, l, sep = "_")] <- ifelse(f_data_mat0[, paste(factor_name0, l, sep = "_")] == l, yes = 1, no = 0)        
+        # set the first level as the "baseline"
+        f_data_mat0[, paste(factor_name0, l, sep = "_")] <- ifelse(test = f_data0 == l, yes = 1, no = 0)
       }
-      f_data_mat0 <- apply(f_data_mat0, 2, as.numeric)
       cvrtdat[, factor_name0] <- NULL
       cvrtdat <- cbind(cvrtdat, f_data_mat0)
       cat(paste("-- Finish processing", factor_name0, ".\n"))
+    } else {
+      cat(paste("  ", factor_name0, "only has 2 levels. \n"))
+      cvrtdat[, factor_name0] <- as.numeric(as.factor(cvrtdat[, factor_name0])) - 1
+      cat("   Converted into 0 and 1. \n")
     }
   }
   cat("\nAll factor covariates finished. \n")
