@@ -13,6 +13,8 @@ Phenotype File     : $params.phenotype_file
 Analyzed Phenotypes: $params.phenotype_names
 Covariates         : $params.covariates
 P-value Cutoff     : $params.pval_cutoff
+Nullmod Family     : $params.nullmod_family
+Test Method        : $params.test_method
 ==============================
 """
 
@@ -232,7 +234,7 @@ process G_QTL_analysis {
 
     script:
     """
-    3_G_nullmod_assoc.R $gds_name $gds_file ${params.genotype_or_dosage} $cvrt_use ${params.GRM_rds} ${params.pval_cutoff} $shared_sampleid ${params.snpset_assoc_txtfile} $pheno_rds ${params.draw_genopheno_boxplot} ${params.boxplot_p_cutoff} 
+    3_G_nullmod_assoc.R $gds_name $gds_file ${params.genotype_or_dosage} $cvrt_use ${params.GRM_rds} ${params.nullmod_family} ${params.test_method} ${params.pval_cutoff} $shared_sampleid ${params.snpset_assoc_txtfile} $pheno_rds ${params.draw_genopheno_boxplot} ${params.boxplot_p_cutoff} 
     """
 }
 

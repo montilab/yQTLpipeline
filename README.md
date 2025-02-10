@@ -135,7 +135,9 @@ Please ensure none of these optional parameters are left empty. Use "NA" when th
 
 ### 3\.3 Parameters to control analysis workflow
 - `params.max_forks_parallel`  Numeric value controlling the max number of parallel processes in QTL discovery.  
-- `params.max_pheno_parallel`  Numeric value controlling the maximum number of phenotypes per QTL discovery process in MatrixeQTL. Increasing it reduces computation time but increases memory usage in the M_QTL_analysis process.  
+- `params.max_pheno_parallel`  Numeric value controlling the maximum number of phenotypes per QTL discovery process when running MatrixeQTL. Increasing it reduces computation time, but increases memory usage in the M_QTL_analysis process.  
+- `params.nullmod_family`  Controls the family of the null model when running GENESIS. Options include "gaussian" or "linear" for normally distributed phenotypes (commonly used in QTL analysis), and "logistic" or "binomial" for binomially distributed phenotypes. This option is not available when running MatrixeQTL.  
+- `params.test_method`  Controls the test method when running GENESIS. Options include "score" to run a score test, and "score.spa" or "spa" (case-insensitive) to run saddlepoint approximation. This option is not available when running MatrixeQTL.  
 - `params.pval_cutoff`  Numeric value setting the threshold for saving and reporting QTL results.  
 - `params.output_result_csv`  Boolean, "true" or "false" (lowercase *with* quotes). QTL results are saved in RDS format by default. Set to "true" to also output results in CSV format.  
 

@@ -6,18 +6,20 @@
 ##  3. "genotype" for genotype data. "dosage" to use dosage (i.e. impute data)
 ##  4. cvrt_rds  rds file path for cvrt .rds; has column "sample.id" to match with .gds
 ##  5. grm_rds  rds file path for grm matrix
-##  6. pval_cutoff  p-value cutoff for QTL
-##  7. shared_sampleid_file  shared sample id file, txt file generated from 0_get_sampleid.R
-##  8. snp_assoc_txtfile  file contains SNP ids to test association; use "NA" to use all SNPs
-##  9. pheno_rds  rds file path for one single phenotype data; has column "sample.id" to match with .gds
-##  10. draw_genopheno_boxplot  "true" to draw genotype-phenotype boxplot for top SNP in each chromosome
-##  11. boxplot_p_cutoff  the p-value cutoff to draw genotype-phenotype boxplot
+##  6. nullmod_family  "gaussian"/"linear" or "binomial"/"logistic"
+##  7. test_method  "Score" or "Score.SPA"
+##  8. pval_cutoff  p-value cutoff for QTL
+##  9. shared_sampleid_file  shared sample id file, txt file generated from 0_get_sampleid.R
+## 10. snp_assoc_txtfile  file contains SNP ids to test association; use "NA" to use all SNPs
+## 11. pheno_rds  rds file path for one single phenotype data; has column "sample.id" to match with .gds
+## 12. draw_genopheno_boxplot  "true" to draw genotype-phenotype boxplot for top SNP in each chromosome
+## 13. boxplot_p_cutoff  the p-value cutoff to draw genotype-phenotype boxplot
 
 ## output:
 ## nullmod_{phenoname}.rds  assoc_{phenoname}.rds  count_{phenoname}.txt
 
 args <- commandArgs(trailingOnly = TRUE)
-phenoname <- gsub(".*phenodat_(.+).rds.*", "\\1", args[9])
+phenoname <- gsub(".*phenodat_(.+).rds.*", "\\1", args[11])
 
 gds_name <- args[1]
 gds_file <- args[2]
@@ -37,16 +39,33 @@ if (args[5] == "NA") {
 } else {
   grm <- readRDS(args[5])
 }
-pval_cutoff <- as.numeric(args[6])
-shared_sampleid <- as.character(readLines(args[7]))
-snp_assoc_txtfile <- args[8]
-pheno_dat <- readRDS(args[9])
+
+args[6] <- tolower(args[6])
+stopifnot(
+  "Error: Parameter 'nullmod_family' must be one of: 'gaussian' (or 'linear') or 'binomial' (or 'logistic'). " =
+    args[6] %in% c("gaussian", "linear", "binomial", "logistic")
+)
+if (args[6] %in% c("gaussian", "linear")) nullmod_family <- "gaussian"
+if (args[6] %in% c("binomial", "logistic")) nullmod_family <- "binomial"
+
+args[7] <- tolower(args[7])
+stopifnot(
+  "Error: Parameter 'test_method' must be one of: 'Score' or 'Score.SPA' (or 'SPA'). " =
+    args[7] %in% c("score", "score.spa", "spa")
+)
+if (args[7] == "score") test_method <- "Score"
+if (args[7] %in% c("score.spa", "spa")) test_method <- "Score.SPA"
+
+pval_cutoff <- as.numeric(args[8])
+shared_sampleid <- as.character(readLines(args[9]))
+snp_assoc_txtfile <- args[10]
+pheno_dat <- readRDS(args[11])
 
 draw_genopheno_boxplot <- FALSE
 boxplot_p_cutoff <- 1
-if (args[10] == "true") {
+if (args[12] == "true") {
   draw_genopheno_boxplot <- TRUE
-  boxplot_p_cutoff <- as.numeric(args[11])
+  boxplot_p_cutoff <- as.numeric(args[13])
 }
 
 suppressPackageStartupMessages(library(Biobase))
@@ -107,7 +126,7 @@ if (run_assoc) {
     outcome = phenoname,
     covars = covariates,
     cov.mat = grm,
-    family = "gaussian",
+    family = nullmod_family,
     verbose = TRUE,
     sample.id = shared_sampleid
   ))
@@ -120,7 +139,7 @@ if (run_assoc) {
     cat(paste("\n-- Begin association of", gds_name, phenoname, ".\n"))
     iterator <- SeqVarBlockIterator(seqData, verbose = FALSE)
 
-    assoc <- assocTestSingle(iterator, imputed = use_impute, nullmod, test = "Score", verbose = TRUE)
+    assoc <- assocTestSingle(iterator, imputed = use_impute, nullmod, test = test_method, verbose = TRUE)
     assoc <- assoc %>% filter(Score.pval <= pval_cutoff)
     cat("\n-- Association finished. \n\n")
 
