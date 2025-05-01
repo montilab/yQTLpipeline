@@ -1,5 +1,7 @@
 #local test
 Example/notpush
+example/Example_G.sh
+example/Example_M.sh
 
 # Mac
 .DS_Store
