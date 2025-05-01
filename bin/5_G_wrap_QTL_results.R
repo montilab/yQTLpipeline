@@ -50,6 +50,9 @@ if (output_result_csv) {
 
 cat("-- Finish saving. Output file as:", paste0("QTL_", phenoname, ".rds/csv"), "\n\n")
 
+## QTLres is saved; rename the column to pval for plotting purposes in this script
+QTLres <- QTLres %>% rename(pval = any_of(c("Score.pval", "SPA.pval")))
+
 if (!is.null(QTLres)) {
   #### Phenotype distribution plot ####
   png(filename = paste0(plot_dir, "hist_", phenoname, ".png"), width = plot_size * 1.5, height = plot_size, res = plot_resolution)
@@ -58,30 +61,30 @@ if (!is.null(QTLres)) {
   cat("-- Finish plotting phenotype histogram. \n\n")
 
   #### QQ plot ####
-  QTLres <- QTLres %>% filter(Score.pval != 0, MAC >= plot_mac)
+  QTLres <- QTLres %>% filter(pval != 0, MAC >= plot_mac)
 
-  lambda <- median(qchisq(1 - QTLres$Score.pval, 1)) / qchisq(0.5, 1)
+  lambda <- median(qchisq(1 - QTLres$pval, 1)) / qchisq(0.5, 1)
 
   png(filename = paste0(plot_dir, "qq_", phenoname, "_lambda_", round(lambda, digits = 3), ".png"), width = plot_size * 1.5, height = plot_size * 1.5, res = plot_resolution)
-  qq(QTLres$Score.pval)
+  qq(QTLres$pval)
   dev.off()
   cat("-- Finish plotting QQ plot.\n")
   cat("   Lambda:", lambda, " \n\n")
 
   #### Manhattan plot ####
   png(filename = paste0(plot_dir, "mht_", phenoname, ".png"), width = plot_size * 2.5, height = plot_size * 1.5, res = plot_resolution)
-  manhattan(x = QTLres, chr = "chr", bp = "pos", snp = "variant.id", p = "Score.pval")
+  manhattan(x = QTLres, chr = "chr", bp = "pos", snp = "variant.id", p = "pval")
   dev.off()
   cat("-- Finish plotting mht plot.\n\n")
 
   #### Miami plot ####
-  ylim <- max(-log10(QTLres$Score.pval)) + 0.2
+  ylim <- max(-log10(QTLres$pval)) + 0.2
   png(filename = paste0(plot_dir, "miami_", phenoname, ".png"), width = plot_size * 2.5, height = plot_size * 1.5, res = plot_resolution)
   par(mfrow = c(2, 1))
   par(mar = c(1.3, 3, 3, 3))
-  manhattan(QTLres %>% filter(Est.ca > 0), ylim = c(0, ylim), chr = "chr", bp = "pos", snp = "variant.id", p = "Score.pval")
+  manhattan(QTLres %>% filter(Est.ca > 0), ylim = c(0, ylim), chr = "chr", bp = "pos", snp = "variant.id", p = "pval")
   par(mar = c(3, 3, 1.3, 3))
-  manhattan(QTLres %>% filter(Est.ca < 0), ylim = c(ylim, 0), xlab = "", xaxt = "n", chr = "chr", bp = "pos", snp = "variant.id", p = "Score.pval")
+  manhattan(QTLres %>% filter(Est.ca < 0), ylim = c(ylim, 0), xlab = "", xaxt = "n", chr = "chr", bp = "pos", snp = "variant.id", p = "pval")
   dev.off()
   cat("-- Finish plotting Miami plot.\n\n")
 }

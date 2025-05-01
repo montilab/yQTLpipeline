@@ -140,7 +140,12 @@ if (run_assoc) {
     iterator <- SeqVarBlockIterator(seqData, verbose = FALSE)
 
     assoc <- assocTestSingle(iterator, imputed = use_impute, nullmod, test = test_method, verbose = TRUE)
-    assoc <- assoc %>% filter(Score.pval <= pval_cutoff)
+
+    if (test_method == "Score") {
+      assoc <- assoc %>% filter(Score.pval <= pval_cutoff)
+    } else if (test_method == "Score.SPA") {
+      assoc <- assoc %>% filter(SPA.pval <= pval_cutoff)
+    }
     cat("\n-- Association finished. \n\n")
 
     if (nrow(assoc) > 0) {
@@ -161,12 +166,15 @@ if (run_assoc) {
       cat("-- Finish saving", paste0("assoc_", phenoname, "_", gds_name, ".rds"), ".\n\n")
 
       ##### Plot genotype-phenotype plot ---------------------------------------
-      if (draw_genopheno_boxplot & min(assoc$Score.pval) < boxplot_p_cutoff) {
+      ## assoc has been saved alreayd. rename the p value column to "pval" is only used in this script for plotting
+      assoc <- assoc %>% rename(pval = any_of(c("Score.pval", "SPA.pval")))
+
+      if (draw_genopheno_boxplot & min(assoc$pval) < boxplot_p_cutoff) {
         cat("-- Start drawing phenotype-genotype boxplot. \n")
         ## first, obtain all SNPs passed p threshold
         assoc_sub <- assoc %>%
-          select(variant.id, chr, pos, Score.pval) %>%
-          filter(Score.pval < boxplot_p_cutoff)
+          select(variant.id, chr, pos, pval) %>%
+          filter(pval < boxplot_p_cutoff)
 
         cat("-- Start subset. \n")
         ## subset GDS to only selected variants
@@ -187,7 +195,7 @@ if (run_assoc) {
         merged_sub_filtered <- merged_sub %>%
           group_by(chr) %>%
           arrange(pos) %>%
-          slice_min(order_by = Score.pval) %>%
+          slice_min(order_by = pval) %>%
           distinct(chr, .keep_all = TRUE) %>%
           as.data.frame()
         cat("-- Number of top SNPs:", nrow(merged_sub_filtered), "\n")
@@ -255,7 +263,11 @@ write(counttable, paste0("count_", phenoname, "_", gds_name, ".txt"), sep = "\t"
 
 #### Write psedo result if no results ==========================================
 if (!assoc_has_result | !run_assoc) {
-  assoc_expected_colnames <- c("phenotype", "variant.id", "chr", "pos", "allele.index.ca", "n.obs", "miss", "freq.ca", "MAC", "Score.ca", "Score.SE", "Score.Stat.ca", "Score.pval", "Est.ca", "Est.SE", "PVE")
+  if (test_method == "Score") {
+    assoc_expected_colnames <- c("phenotype", "variant.id", "chr", "pos", "allele.index.ca", "n.obs", "miss", "freq.ca", "MAC", "Score.ca", "Score.SE", "Score.Stat.ca", "Score.pval", "Est.ca", "Est.SE", "PVE")
+  } else if (test_method == "Score.SPA") {
+    assoc_expected_colnames <- c("phenotype", "variant.id", "chr", "pos", "allele.index.ca", "n.obs", "miss", "freq.ca", "MAC", "Score.ca", "Score.SE", "Score.Stat.ca", "SPA.pval", "Est.ca", "Est.SE", "PVE", "SPA.converged")
+  }
   assoc_psedo_res <- data.frame(matrix(ncol = length(assoc_expected_colnames), nrow = 0))
   colnames(assoc_psedo_res) <- assoc_expected_colnames
   assoc_psedo_res$chr <- as.numeric(assoc_psedo_res$chr)
