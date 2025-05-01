@@ -96,7 +96,7 @@ process move_boxplot {
     # discard all standard ls output and all error, `2`, to /dev/null. 
     # if ls command is not an error, i.e. png files exists, execute mv command. 
 
-    echo "If no png file appears, it means there are no genotype-phenotype boxplot found. \nIf you think this is a mistake, check 3_individual_results/ folder. \n" > finished.txt
+    echo "If no PNG file appears in this folder, it means no genotype-phenotype boxplots were found. \nThis usually happens when no significant QTLs are detected in the results. \nIf you believe this is not the case, check the 3_individual_results/ folder. " > finished.txt
     """
 }
 
