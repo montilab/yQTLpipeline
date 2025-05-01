@@ -1,7 +1,6 @@
 #' Creates a manhattan plot
 #' 
-#' Creates a manhattan plot from PLINK assoc output (or any data frame with 
-#' chromosome, position, and p-value).
+#' The following code is copied from qqman package with the modification of highlight color and pch. 
 #' 
 #' @param x A data.frame with columns "BP," "CHR," "P," and optionally, "SNP."
 #' @param chr A string denoting the column name for the chromosome. Defaults to 

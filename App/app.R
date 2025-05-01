@@ -30,8 +30,8 @@ ui <- fluidPage(
     position = "fixed-top",
     table_preview_ui,
     phenotype_ui,
-    genopheno_ui,
-    network_ui
+    network_ui,
+    genopheno_ui
   )
 )
 

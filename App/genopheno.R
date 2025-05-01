@@ -26,14 +26,14 @@ genopheno_ui <- tabPanel(
       ),
       column(
         8,
-        reactableOutput("genopheno_gds_snp_preview"),
         htmlOutput("genopheno_readgeno_text"),
         htmlOutput("genopheno_readpheno_text"),
         htmlOutput("genopheno_plot_text"),
         conditionalPanel(
           condition = "output.genopheno_plot_text",
           plotOutput("genopheno_boxplot")
-        )
+        ),
+        reactableOutput("genopheno_gds_snp_preview")
       )
     )
   )
