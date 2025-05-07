@@ -128,126 +128,134 @@ if (run_assoc) {
     cov.mat = grm,
     family = nullmod_family,
     verbose = TRUE,
-    sample.id = shared_sampleid
+    sample.id = shared_sampleid,
+    max.iter = 50
   ))
 
   ##### GWAS -------------------------------------------------------------------
-  if (class(nullmod) != "try-error") {
-    saveRDS(nullmod, paste0("nullmod_", phenoname, "_", gds_name, ".rds"))
-    cat("\n-- Nullmod finished. \n\n")
+  # if (class(nullmod) != "try-error") {
+  if (class(nullmod) == "GENESIS.nullMixedModel") {
+    if (nullmod$converged) {
+      saveRDS(nullmod, paste0("nullmod_", phenoname, "_", gds_name, ".rds"))
+      cat("\n-- Nullmod finished. \n\n")
 
-    cat(paste("\n-- Begin association of", gds_name, phenoname, ".\n"))
-    iterator <- SeqVarBlockIterator(seqData, verbose = FALSE)
+      cat(paste("\n-- Begin association of", gds_name, phenoname, ".\n"))
+      iterator <- SeqVarBlockIterator(seqData, verbose = FALSE)
 
-    assoc <- assocTestSingle(iterator, imputed = use_impute, nullmod, test = test_method, verbose = TRUE)
+      assoc <- assocTestSingle(iterator, imputed = use_impute, nullmod, test = test_method, verbose = TRUE)
 
-    if (test_method == "Score") {
-      assoc <- assoc %>% filter(Score.pval <= pval_cutoff)
-    } else if (test_method == "Score.SPA") {
-      assoc <- assoc %>% filter(SPA.pval <= pval_cutoff)
-    }
-    cat("\n-- Association finished. \n\n")
-
-    if (nrow(assoc) > 0) {
-      assoc_has_result <- TRUE
-
-      ## Add missingness, phenotype, format columns
-      assoc <- assoc %>%
-        mutate(.after = "n.obs", miss = 1 - (assoc$n.obs / length(shared_sampleid))) %>%
-        mutate(.before = everything(), phenotype = phenoname) %>%
-        mutate(
-          chr = as.numeric(as.character(chr)),
-          pos = as.numeric(as.character(pos))
-        ) %>%
-        rename_with(~ paste0(., ".ca"), .cols = c(allele.index, freq, Score, Score.Stat, Est))
-
-      saveRDS(assoc, paste0("assoc_", phenoname, "_", gds_name, ".rds"))
-      counttable <- c(phenoname, gds_name, nrow(assoc), "success")
-      cat("-- Finish saving", paste0("assoc_", phenoname, "_", gds_name, ".rds"), ".\n\n")
-
-      ##### Plot genotype-phenotype plot ---------------------------------------
-      ## assoc has been saved alreayd. rename the p value column to "pval" is only used in this script for plotting
-      assoc <- assoc %>% rename(pval = any_of(c("Score.pval", "SPA.pval")))
-
-      if (draw_genopheno_boxplot & min(assoc$pval) < boxplot_p_cutoff) {
-        cat("-- Start drawing phenotype-genotype boxplot. \n")
-        ## first, obtain all SNPs passed p threshold
-        assoc_sub <- assoc %>%
-          select(variant.id, chr, pos, pval) %>%
-          filter(pval < boxplot_p_cutoff)
-
-        cat("-- Start subset. \n")
-        ## subset GDS to only selected variants
-        seqSetFilter(gds, variant.id = assoc_sub$variant.id, sample.id = shared_sampleid)
-
-        cat("-- Start SNP info. \n")
-        ## obtain SNP information
-        SNP_info_sub <- data.frame(
-          "variant.id" = seqGetData(gds, "variant.id"),
-          "REF" = seqGetData(gds, "$ref"),
-          "ALT" = seqGetData(gds, "$alt")
-        )
-
-        ## GENESIS only process one phenotype at a time, no need to loop through phenotypes
-        ## for each chromosome, only keep the top SNP
-        ## sometimes multiple SNPs have the same p-value. keep the smallest pos
-        merged_sub <- merge(x = SNP_info_sub, y = assoc_sub, by = "variant.id", all = T)
-        merged_sub_filtered <- merged_sub %>%
-          group_by(chr) %>%
-          arrange(pos) %>%
-          slice_min(order_by = pval) %>%
-          distinct(chr, .keep_all = TRUE) %>%
-          as.data.frame()
-        cat("-- Number of top SNPs:", nrow(merged_sub_filtered), "\n")
-
-        ## obtain genotype information for plotting
-        geno_mat_sub <- snpgdsGetGeno(gds,
-          snpfirstdim = TRUE, with.id = TRUE,
-          snp.id = merged_sub_filtered$variant.id, sample.id = shared_sampleid
-        )
-        colnames(geno_mat_sub$genotype) <- geno_mat_sub$sample.id
-        rownames(geno_mat_sub$genotype) <- geno_mat_sub$snp.id
-        geno_mat_sub <- as.data.frame(t(geno_mat_sub$genotype)) %>%
-          mutate(across(everything(), ~ factor(case_when(
-            . == 0 ~ "Alt/Alt",
-            . == 1 ~ "Ref/Alt",
-            . == 2 ~ "Ref/Ref",
-            TRUE ~ as.character(.)
-          ), levels = c("Ref/Ref", "Ref/Alt", "Alt/Alt")))) %>%
-          rownames_to_column(var = "sample.id")
-
-        ## merge genotype and phenotype data
-        plot_pheno_dat <- merge(
-          x = geno_mat_sub,
-          y = pheno_dat, # pheno_dat only has two columns: sample.id, phenotype (phenoname)
-          by = "sample.id", all.x = F, all.y = F
-        )
-
-        ## plot for each SNP
-        for (variant0 in merged_sub_filtered$variant.id) {
-          snp_name0 <- paste0("chr", paste(merged_sub_filtered %>% filter(variant.id == variant0) %>% select(chr, pos, REF, ALT) %>% as.character(), collapse = "_"))
-          snp_column0 <- as.character(variant0)
-          png(paste0(phenoname, "_", snp_name0, ".png"), width = 600, height = 400, res = 120)
-          print(
-            ggplot(plot_pheno_dat, aes(x = !!as.name(snp_column0), y = !!as.name(phenoname), fill = !!as.name(snp_column0))) +
-              geom_boxplot() +
-              theme_minimal() +
-              xlab(snp_name0) +
-              theme(legend.position = "none") +
-              scale_fill_manual(values = c("#E5A1C3", "#A1A1E5", "#A1E5C3")) +
-              ggtitle(paste(phenoname, "x", snp_name0))
-          )
-          dev.off()
-        }
+      if (test_method == "Score") {
+        assoc <- assoc %>% filter(Score.pval <= pval_cutoff)
+      } else if (test_method == "Score.SPA") {
+        assoc <- assoc %>% filter(SPA.pval <= pval_cutoff)
       }
+      cat("\n-- Association finished. \n\n")
+
+      if (nrow(assoc) > 0) {
+        assoc_has_result <- TRUE
+
+        ## Add missingness, phenotype, format columns
+        assoc <- assoc %>%
+          mutate(.after = "n.obs", miss = 1 - (assoc$n.obs / length(shared_sampleid))) %>%
+          mutate(.before = everything(), phenotype = phenoname) %>%
+          mutate(
+            chr = as.numeric(as.character(chr)),
+            pos = as.numeric(as.character(pos))
+          ) %>%
+          rename_with(~ paste0(., ".ca"), .cols = c(allele.index, freq, Score, Score.Stat, Est))
+
+        saveRDS(assoc, paste0("assoc_", phenoname, "_", gds_name, ".rds"))
+        counttable <- c(phenoname, gds_name, nrow(assoc), "success")
+        cat("-- Finish saving", paste0("assoc_", phenoname, "_", gds_name, ".rds"), ".\n\n")
+
+        ##### Plot genotype-phenotype plot ---------------------------------------
+        ## assoc has been saved alreayd. rename the p value column to "pval" is only used in this script for plotting
+        assoc <- assoc %>% rename(pval = any_of(c("Score.pval", "SPA.pval")))
+
+        if (draw_genopheno_boxplot & min(assoc$pval) < boxplot_p_cutoff) {
+          cat("-- Start drawing phenotype-genotype boxplot. \n")
+          ## first, obtain all SNPs passed p threshold
+          assoc_sub <- assoc %>%
+            select(variant.id, chr, pos, pval) %>%
+            filter(pval < boxplot_p_cutoff)
+
+          cat("-- Start subset. \n")
+          ## subset GDS to only selected variants
+          seqSetFilter(gds, variant.id = assoc_sub$variant.id, sample.id = shared_sampleid)
+
+          cat("-- Start SNP info. \n")
+          ## obtain SNP information
+          SNP_info_sub <- data.frame(
+            "variant.id" = seqGetData(gds, "variant.id"),
+            "REF" = seqGetData(gds, "$ref"),
+            "ALT" = seqGetData(gds, "$alt")
+          )
+
+          ## GENESIS only process one phenotype at a time, no need to loop through phenotypes
+          ## for each chromosome, only keep the top SNP
+          ## sometimes multiple SNPs have the same p-value. keep the smallest pos
+          merged_sub <- merge(x = SNP_info_sub, y = assoc_sub, by = "variant.id", all = T)
+          merged_sub_filtered <- merged_sub %>%
+            group_by(chr) %>%
+            arrange(pos) %>%
+            slice_min(order_by = pval) %>%
+            distinct(chr, .keep_all = TRUE) %>%
+            as.data.frame()
+          cat("-- Number of top SNPs:", nrow(merged_sub_filtered), "\n")
+
+          ## obtain genotype information for plotting
+          geno_mat_sub <- snpgdsGetGeno(gds,
+            snpfirstdim = TRUE, with.id = TRUE,
+            snp.id = merged_sub_filtered$variant.id, sample.id = shared_sampleid
+          )
+          colnames(geno_mat_sub$genotype) <- geno_mat_sub$sample.id
+          rownames(geno_mat_sub$genotype) <- geno_mat_sub$snp.id
+          geno_mat_sub <- as.data.frame(t(geno_mat_sub$genotype)) %>%
+            mutate(across(everything(), ~ factor(case_when(
+              . == 0 ~ "Alt/Alt",
+              . == 1 ~ "Ref/Alt",
+              . == 2 ~ "Ref/Ref",
+              TRUE ~ as.character(.)
+            ), levels = c("Ref/Ref", "Ref/Alt", "Alt/Alt")))) %>%
+            rownames_to_column(var = "sample.id")
+
+          ## merge genotype and phenotype data
+          plot_pheno_dat <- merge(
+            x = geno_mat_sub,
+            y = pheno_dat, # pheno_dat only has two columns: sample.id, phenotype (phenoname)
+            by = "sample.id", all.x = F, all.y = F
+          )
+
+          ## plot for each SNP
+          for (variant0 in merged_sub_filtered$variant.id) {
+            snp_name0 <- paste0("chr", paste(merged_sub_filtered %>% filter(variant.id == variant0) %>% select(chr, pos, REF, ALT) %>% as.character(), collapse = "_"))
+            snp_column0 <- as.character(variant0)
+            png(paste0(phenoname, "_", snp_name0, ".png"), width = 600, height = 400, res = 120)
+            print(
+              ggplot(plot_pheno_dat, aes(x = !!as.name(snp_column0), y = !!as.name(phenoname), fill = !!as.name(snp_column0))) +
+                geom_boxplot() +
+                theme_minimal() +
+                xlab(snp_name0) +
+                theme(legend.position = "none") +
+                scale_fill_manual(values = c("#E5A1C3", "#A1A1E5", "#A1E5C3")) +
+                ggtitle(paste(phenoname, "x", snp_name0))
+            )
+            dev.off()
+          }
+        }
+      } else {
+        cat(paste0("Message: ", phenoname, gds_name, " do not have QTLs passed threshold.\n"))
+        counttable <- c(phenoname, gds_name, 0, "success_noQTL")
+        assoc_has_result <- FALSE
+      }
+      seqResetFilter(iterator)
     } else {
-      cat(paste0("Message: ", phenoname, gds_name, " do not have QTLs passed threshold.\n"))
-      counttable <- c(phenoname, gds_name, 0, "success_noQTL")
+      cat(paste("Warning:", phenoname, gds_name, " null model failed to converge.\n"))
+      counttable <- c(phenoname, gds_name, 0, "failed")
       assoc_has_result <- FALSE
     }
-    seqResetFilter(iterator)
   } else {
-    cat(paste0("Warning: ", phenoname, gds_name, " failed to generate nullmodel.\n"))
+    cat(paste("Warning:", phenoname, gds_name, " failed to generate nullmodel.\n"))
     counttable <- c(phenoname, gds_name, 0, "failed")
     assoc_has_result <- FALSE
   }
