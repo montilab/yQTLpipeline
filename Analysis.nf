@@ -9,6 +9,7 @@ QTL Pipeline - Analysis
 Output Directory   : $params.outdir
 Method             : $params.pipeline_engine
 Genotype File      : $params.gds_list
+GRM File           : $params.GRM_rds
 Phenotype File     : $params.phenotype_file
 Analyzed Phenotypes: $params.phenotype_names
 Covariates         : $params.covariates
@@ -168,7 +169,7 @@ process G_get_shared_sampleid {
     
     script:
     """
-    0_G_get_shared_sampleid.R $gds_example ${params.phenotype_file} ${params.covariates_file} ${params.userdef_sampleid_txtfile} 
+    0_G_get_shared_sampleid.R $gds_example ${params.GRM_rds} ${params.phenotype_file} ${params.covariates_file} ${params.userdef_sampleid_txtfile} 
     """
 }
 
