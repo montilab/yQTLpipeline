@@ -74,7 +74,7 @@ process G_QTL_results_wrap {
 
     script:
     """
-    5_G_wrap_QTL_results.R $individual_phenodat $QTL_assoc_winfo_dir ${params.output_result_csv} ${params.plot_mac} ${params.plot_resolution} ${params.plot_size} 
+    5_G_wrap_QTL_results.R $individual_phenodat $QTL_assoc_winfo_dir ${params.gds_list} ${params.output_result_csv} ${params.plot_mac} ${params.plot_resolution} ${params.plot_size} 
     """
 }
 
