@@ -16,21 +16,31 @@ args <- commandArgs(trailingOnly = TRUE)
 sink("1_covariates.log", append = FALSE, split = TRUE)
 date()
 
+cvrt_file <- "NA"
+cvrtdat <- data.frame()
+input_covariates <- character(0)
+factor_covariates <- character(0)
+shared_sampleid <- as.character(readLines(args[5]))
+
+if (args[1] == "NA" && args[2] == "NA") {
+  cvrtdat <- data.frame(
+    sample.id = shared_sampleid,
+    stringsAsFactors = FALSE
+  )
+}
+
 if (args[1] != "NA" && args[3] != "NA") {
   cvrt_file <- args[1]
   input_covariates <- unlist(strsplit(as.character(args[3]), ",", fixed = TRUE))
-  if (args[3] != "NA") {
+  if (args[4] != "NA") {
     factor_covariates <- unlist(strsplit(as.character(args[4]), ",", fixed = TRUE))
   }
 }
 
-shared_sampleid <- as.character(readLines(args[5]))
-
 ## read cvrtdat
-cvrtdat <- NULL
-if (cvrt_file != "NA" && input_covariates != "NA") {
+if (cvrt_file != "NA") {
   if (endsWith(tolower(cvrt_file), ".txt")) {
-    cvrtdat <- read.table(cvrt_file, sep = "\t", header = TRUE)
+    cvrtdat <- read.table(cvrt_file, sep = "\t", header = TRUE, stringsAsFactors = FALSE)
   } else if (endsWith(tolower(cvrt_file), ".csv")) {
     cvrtdat <- read.csv(cvrt_file)
   } else if (endsWith(tolower(cvrt_file), ".rds")) {
@@ -48,6 +58,7 @@ if (args[2] != "NA") {
   PC_rds <- readRDS(args[2])
   duplicate_cols <- intersect(colnames(PC_rds), colnames(cvrtdat))
   duplicate_cols <- duplicate_cols[which(duplicate_cols != "sample.id")]
+
   if (length(duplicate_cols) > 0) {
     cat(
       "Warning: Duplicated columns found in input covariate file and PCs RDS file:\n",
@@ -56,10 +67,20 @@ if (args[2] != "NA") {
     )
     cvrtdat[, duplicate_cols] <- NULL
   }
-  cvrtdat <- merge(x = cvrtdat, y = PC_rds, by = "sample.id", all = FALSE)
+
+  if (cvrt_file != "NA") {
+    cvrtdat <- merge(x = cvrtdat, y = PC_rds, by = "sample.id", all = FALSE)
+  } else {
+    cvrtdat <- PC_rds
+  }
 }
 
-cvrtdat <- subset(cvrtdat, sample.id %in% shared_sampleid)
+if ("sample.id" %in% colnames(cvrtdat)) {
+  cvrtdat <- subset(cvrtdat, sample.id %in% shared_sampleid)
+} else {
+  stop("Error: 'sample.id' column missing after processing.")
+}
+
 covariates <- intersect(colnames(cvrtdat), input_covariates)
 factor_covariates <- intersect(covariates, factor_covariates)
 numeric_covariates <- setdiff(covariates, factor_covariates)
@@ -94,7 +115,12 @@ if (length(factor_covariates) >= 1) {
         "  Convert to 0 and 1 respectively. \n"
       ))
       ## fill it as NA if it was NA originally
-      cvrtdat[, factor_name0] <- ifelse(cvrtdat[, factor_name0] %in% c(NA, "NA", ""), yes = NA, no = cvrtdat[, factor_name0])
+      x <- cvrtdat[, factor_name0]
+      cvrtdat[, factor_name0] <- ifelse(
+        is.na(x) | x %in% c("NA", ""),
+        yes = NA,
+        no = x
+      )
 
       ## fill it with 0 and 1
       ## if something is NA, ifelse will not process it as "no" but will remain NA
@@ -114,7 +140,12 @@ if (length(factor_covariates) >= 1) {
       )
       for (l in all_levels0[2:length(all_levels0)]) {
         ## fill it as NA if it was NA originally
-        f_data_mat0[, paste(factor_name0, l, sep = "_")] <- ifelse(cvrtdat[, factor_name0] %in% c(NA, "NA", ""), yes = NA, no = cvrtdat[, factor_name0])
+        x <- as.character(cvrtdat[, factor_name0])
+        f_data_mat0[, paste(factor_name0, l, sep = "_")] <- ifelse(
+          is.na(x) | x %in% c("NA", ""),
+          yes = NA,
+          no = x
+        )
 
         ## fill it with 1 if it is the current factor level we are working on
         ## if something is NA, ifelse will not process it as "no" but will remain NA
