@@ -15,7 +15,7 @@ date()
 
 args <- commandArgs(trailingOnly = TRUE)
 pheno_file <- args[1]
-pheno_name_all <- as.character(readLines(args[2]))
+pheno_name_file <- args[2]
 max_phenotype <- as.numeric(args[3])
 shared_sampleid <- as.character(readLines(args[4]))
 
@@ -34,13 +34,15 @@ if (!"sample.id" %in% colnames(phenodat)) {
   stop("phenotype data must contain a column 'sample.id' to match with sample id in genotype data. ")
 }
 
-## subset phenodat by shared_sampleid and pheno_name_all
+## subset phenodat by shared_sampleid and pheno_name_file
 phenodat$sample.id <- as.character(phenodat$sample.id)
 phenodat <- phenodat[which(phenodat$sample.id %in% shared_sampleid), ]
 
-if (pheno_name_all == "all") {
+if (pheno_name_file == "all") {
   pheno_name_all <- colnames(phenodat)
   pheno_name_all <- pheno_name_all[-which(pheno_name_all == "sample.id")]
+} else {
+  pheno_name_all <- as.character(readLines(pheno_name_file))
 }
 
 if (!all(pheno_name_all %in% colnames(phenodat))) {
@@ -67,7 +69,7 @@ if (length(pheno_name_all) <= max_phenotype) {
     length(pheno_name_chunklist), "chunks. \n\n"
   ))
   for (i in c(1:length(pheno_name_chunklist))) {
-    cat(paste("  start spliting pheno chunk", i, "...\n"))
+    cat(paste("  start splitting pheno chunk", i, "...\n"))
     pheno_name0 <- pheno_name_chunklist[[i]]
     phenodat0 <- phenodat[, c("sample.id", pheno_name0)]
     saveRDS(phenodat0, paste0("phenodat_chunk", i, ".rds"))
